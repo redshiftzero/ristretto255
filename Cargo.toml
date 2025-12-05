@@ -1,0 +1,18 @@
+[package]
+name = "ristretto255"
+version = "0.1.0"
+edition = "2021"
+authors = ["redshiftzero <jen@relicveil.com>"]
+description = "Verified implementation of ristretto255 prime-order group"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/redshiftzero/ristretto255"
+readme = "README.md"
+
+[lib]
+name = "ristretto255"
+path = "src/lib.rs"
+
+[dependencies]
+
+[dev-dependencies]
+
