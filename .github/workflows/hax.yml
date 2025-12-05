@@ -19,8 +19,6 @@ jobs:
           fstar: v2025.02.17
           hax_reference: hax-lib-v0.3.5
 
-      - run: sudo apt-get install protobuf-compiler
-
       - name: 🏃 Extract F*
         run: |
           rm -f proofs/fstar/extraction/*.fst*
