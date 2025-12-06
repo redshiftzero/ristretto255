@@ -13,6 +13,7 @@ name = "ristretto255"
 path = "src/lib.rs"
 
 [dependencies]
+# libcrux-curve25519
+hax-lib = "0.3.5"
 
 [dev-dependencies]
-
