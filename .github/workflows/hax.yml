@@ -22,6 +22,6 @@ jobs:
       - name: 🏃 Extract F*
         run: |
           rm -f proofs/fstar/extraction/*.fst*
-          ./hax.py extract
+          python3 hax.py extract
       - name: 🏃 Type-check extracted F*
-        run: ./hax.py prove
+        run: python3 hax.py prove
