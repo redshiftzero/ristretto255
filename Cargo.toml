@@ -14,7 +14,8 @@ path = "src/lib.rs"
 
 [dependencies]
 # libcrux-curve25519
-hax-lib = "0.3.5"
+hax-lib = "0.3.6"
 subtle = "1.0.0"
+curve25519-dalek = "4.1.3"
 
 [dev-dependencies]
