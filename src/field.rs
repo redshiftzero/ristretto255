@@ -47,6 +47,17 @@ impl Mul<u64> for FieldElement {
     }
 }
 
+impl Mul for FieldElement {
+    type Output = FieldElement;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        let mut out = [0u64; 5];
+        let tmp: [uint128::uint128; 10] = [uint128::uint64_to_uint128(0u64); 10];
+        hacl::fmul(&mut out, &self.0, &rhs.0, &tmp);
+        FieldElement(out)
+    }
+}
+
 impl FieldElement {
     pub const ONE: Self = Self([1, 0, 0, 0, 0]);
 
@@ -186,5 +197,13 @@ impl Sub<&FieldElement> for &FieldElement {
 
     fn sub(self, rhs: &FieldElement) -> Self::Output {
         (*self) - (*rhs)
+    }
+}
+
+impl Mul<&FieldElement> for &FieldElement {
+    type Output = FieldElement;
+
+    fn mul(self, rhs: &FieldElement) -> Self::Output {
+        (*self) * (*rhs)
     }
 }
