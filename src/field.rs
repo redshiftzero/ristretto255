@@ -46,6 +46,8 @@ impl Mul<u64> for FieldElement {
 }
 
 impl FieldElement {
+    pub const ONE: Self = Self([1, 0, 0, 0, 0]);
+
     #[inline]
     pub fn square(self) -> Self {
         let mut out: [u64; 5] = [0u64; 5];
@@ -54,5 +56,21 @@ impl FieldElement {
         let tmp: [uint128::uint128; 10] = [uint128::uint64_to_uint128(0u64); 10];
         hacl::fsqr(&mut out, &self.0, &tmp);
         FieldElement(out)
+    }
+}
+
+impl Add<&FieldElement> for &FieldElement {
+    type Output = FieldElement;
+
+    fn add(self, rhs: &FieldElement) -> Self::Output {
+        (*self) + (*rhs)
+    }
+}
+
+impl Sub<&FieldElement> for &FieldElement {
+    type Output = FieldElement;
+
+    fn sub(self, rhs: &FieldElement) -> Self::Output {
+        (*self) - (*rhs)
     }
 }
