@@ -7,6 +7,7 @@ use subtle::Choice;
 pub use libcrux_hacl_rs::bignum25519_51 as hacl;
 use libcrux_hacl_rs::fstar::uint128;
 
+// TODO: Make FieldElement pub(crate)
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FieldElement(pub [u64; 5]);
 
@@ -77,6 +78,84 @@ impl FieldElement {
         ])
     }
 
+    /// Serialize this field element to canonical 32-byte encoding.
+    ///
+    /// Adapted from the `curve25519-dalek` crate.
+    #[rustfmt::skip]
+    pub fn to_bytes(self) -> [u8; 32] {
+        let low_51_bit_mask = (1u64 << 51) - 1;
+        let mut limbs = self.0;
+
+        // Reduce limbs to keep h < 2p before canonicalization.
+        limbs[1] += limbs[0] >> 51;
+        limbs[0] &= low_51_bit_mask;
+        limbs[2] += limbs[1] >> 51;
+        limbs[1] &= low_51_bit_mask;
+        limbs[3] += limbs[2] >> 51;
+        limbs[2] &= low_51_bit_mask;
+        limbs[4] += limbs[3] >> 51;
+        limbs[3] &= low_51_bit_mask;
+        limbs[0] += (limbs[4] >> 51) * 19;
+        limbs[4] &= low_51_bit_mask;
+        limbs[1] += limbs[0] >> 51;
+        limbs[0] &= low_51_bit_mask;
+
+        let mut q = (limbs[0] + 19) >> 51;
+        q = (limbs[1] + q) >> 51;
+        q = (limbs[2] + q) >> 51;
+        q = (limbs[3] + q) >> 51;
+        q = (limbs[4] + q) >> 51;
+
+        limbs[0] += 19 * q;
+
+        limbs[1] += limbs[0] >> 51;
+        limbs[0] &= low_51_bit_mask;
+        limbs[2] += limbs[1] >> 51;
+        limbs[1] &= low_51_bit_mask;
+        limbs[3] += limbs[2] >> 51;
+        limbs[2] &= low_51_bit_mask;
+        limbs[4] += limbs[3] >> 51;
+        limbs[3] &= low_51_bit_mask;
+        limbs[4] &= low_51_bit_mask;
+
+        let mut s = [0u8; 32];
+        s[ 0] =   limbs[0]                           as u8;
+        s[ 1] =  (limbs[0] >>  8)                    as u8;
+        s[ 2] =  (limbs[0] >> 16)                    as u8;
+        s[ 3] =  (limbs[0] >> 24)                    as u8;
+        s[ 4] =  (limbs[0] >> 32)                    as u8;
+        s[ 5] =  (limbs[0] >> 40)                    as u8;
+        s[ 6] = ((limbs[0] >> 48) | (limbs[1] << 3)) as u8;
+        s[ 7] =  (limbs[1] >>  5)                    as u8;
+        s[ 8] =  (limbs[1] >> 13)                    as u8;
+        s[ 9] =  (limbs[1] >> 21)                    as u8;
+        s[10] =  (limbs[1] >> 29)                    as u8;
+        s[11] =  (limbs[1] >> 37)                    as u8;
+        s[12] = ((limbs[1] >> 45) | (limbs[2] << 6)) as u8;
+        s[13] =  (limbs[2] >>  2)                    as u8;
+        s[14] =  (limbs[2] >> 10)                    as u8;
+        s[15] =  (limbs[2] >> 18)                    as u8;
+        s[16] =  (limbs[2] >> 26)                    as u8;
+        s[17] =  (limbs[2] >> 34)                    as u8;
+        s[18] =  (limbs[2] >> 42)                    as u8;
+        s[19] = ((limbs[2] >> 50) | (limbs[3] << 1)) as u8;
+        s[20] =  (limbs[3] >>  7)                    as u8;
+        s[21] =  (limbs[3] >> 15)                    as u8;
+        s[22] =  (limbs[3] >> 23)                    as u8;
+        s[23] =  (limbs[3] >> 31)                    as u8;
+        s[24] =  (limbs[3] >> 39)                    as u8;
+        s[25] = ((limbs[3] >> 47) | (limbs[4] << 4)) as u8;
+        s[26] =  (limbs[4] >>  4)                    as u8;
+        s[27] =  (limbs[4] >> 12)                    as u8;
+        s[28] =  (limbs[4] >> 20)                    as u8;
+        s[29] =  (limbs[4] >> 28)                    as u8;
+        s[30] =  (limbs[4] >> 36)                    as u8;
+        s[31] =  (limbs[4] >> 44)                    as u8;
+
+        debug_assert!((s[31] & 0b1000_0000u8) == 0u8);
+        s
+    }
+
     #[inline]
     pub fn square(self) -> Self {
         let mut out: [u64; 5] = [0u64; 5];
@@ -85,6 +164,12 @@ impl FieldElement {
         let tmp: [uint128::uint128; 10] = [uint128::uint64_to_uint128(0u64); 10];
         hacl::fsqr(&mut out, &self.0, &tmp);
         FieldElement(out)
+    }
+
+    #[inline]
+    pub fn is_negative(&self) -> Choice {
+        let bytes = self.to_bytes();
+        (bytes[0] & 1).into()
     }
 }
 
