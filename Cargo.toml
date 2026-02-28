@@ -13,9 +13,11 @@ name = "ristretto255"
 path = "src/lib.rs"
 
 [dependencies]
-# libcrux-curve25519
+libcrux-curve25519 = "0.0.6"
 hax-lib = "0.3.6"
 subtle = "1.0.0"
+# This is needed only to pull in a few traits
 curve25519-dalek = "4.1.3"
+libcrux-hacl-rs = "0.0.4"
 
 [dev-dependencies]

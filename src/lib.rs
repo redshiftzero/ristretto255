@@ -10,6 +10,8 @@ use std::array::TryFromSliceError;
 
 use subtle::{Choice, ConstantTimeEq};
 
+mod field;
+
 /// A compressed Ristretto255 point.
 #[derive(Copy, Clone, Eq, Hash)]
 pub struct CompressedRistretto(pub [u8; 32]);
