@@ -1,6 +1,6 @@
 use curve25519_dalek::traits::Identity;
 use std::ops::{Add, Mul, Sub};
-use subtle::Choice;
+use subtle::{Choice, ConstantTimeEq};
 
 // To get access to the field element functions (represented upstream in the verified
 // core as 5 u64 limbs), we need to use the hacl-rs crate directly.
@@ -181,6 +181,13 @@ impl FieldElement {
     pub fn is_negative(&self) -> Choice {
         let bytes = self.to_bytes();
         (bytes[0] & 1).into()
+    }
+
+    #[inline]
+    pub fn is_zero(&self) -> Choice {
+        let zero = [0u8; 32];
+        let bytes = self.to_bytes();
+        bytes.ct_eq(&zero)
     }
 }
 

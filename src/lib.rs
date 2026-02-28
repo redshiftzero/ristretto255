@@ -52,6 +52,29 @@ impl CompressedRistretto {
     pub fn from_slice(bytes: &[u8]) -> Result<CompressedRistretto, TryFromSliceError> {
         bytes.try_into().map(CompressedRistretto)
     }
+
+    /// Attempt to decompress to an `RistrettoPoint`.
+    ///
+    /// # Return
+    ///
+    /// - `Some(RistrettoPoint)` if `self` was the canonical encoding of a point;
+    ///
+    /// - `None` if `self` was not the canonical encoding of a point.
+    pub fn decompress(&self) -> Option<RistrettoPoint> {
+        let (s_encoding_is_canonical, s_is_negative, s) = decompress::step_1(self);
+
+        if (!s_encoding_is_canonical | s_is_negative).into() {
+            return None;
+        }
+
+        let (ok, t_is_negative, y_is_zero, res) = decompress::step_2(s);
+
+        if (!ok | t_is_negative | y_is_zero).into() {
+            None
+        } else {
+            Some(res)
+        }
+    }
 }
 
 impl Identity for CompressedRistretto {
@@ -90,45 +113,45 @@ mod decompress {
         (s_encoding_is_canonical, s_is_negative, s)
     }
 
-    //     pub(super) fn step_2(s: FieldElement) -> (Choice, Choice, Choice, RistrettoPoint) {
-    //         // Step 2.  Compute (X:Y:Z:T).
-    //         let one = FieldElement::ONE;
-    //         let ss = s.square();
-    //         let u1 = &one - &ss; //  1 + as²
-    //         let u2 = &one + &ss; //  1 - as²    where a=-1
-    //         let u2_sqr = u2.square(); // (1 - as²)²
+        pub(super) fn step_2(s: FieldElement) -> (Choice, Choice, Choice, RistrettoPoint) {
+            // Step 2.  Compute (X:Y:Z:T).
+            let one = FieldElement::ONE;
+            let ss = s.square();
+            let u1 = &one - &ss; //  1 + as²
+            let u2 = &one + &ss; //  1 - as²    where a=-1
+            let u2_sqr = u2.square(); // (1 - as²)²
 
-    //         // v == ad(1+as²)² - (1-as²)²            where d=-121665/121666
-    //         let v = &(&(-&constants::EDWARDS_D) * &u1.square()) - &u2_sqr;
+            // v == ad(1+as²)² - (1-as²)²            where d=-121665/121666
+            let v = &(&(-&constants::EDWARDS_D) * &u1.square()) - &u2_sqr;
 
-    //         let (ok, I) = (&v * &u2_sqr).invsqrt(); // 1/sqrt(v*u_2²)
+            let (ok, I) = (&v * &u2_sqr).invsqrt(); // 1/sqrt(v*u_2²)
 
-    //         let Dx = &I * &u2; // 1/sqrt(v)
-    //         let Dy = &I * &(&Dx * &v); // 1/u2
+            let Dx = &I * &u2; // 1/sqrt(v)
+            let Dy = &I * &(&Dx * &v); // 1/u2
 
-    //         // x == | 2s/sqrt(v) | == + sqrt(4s²/(ad(1+as²)² - (1-as²)²))
-    //         let mut x = &(&s + &s) * &Dx;
-    //         let x_neg = x.is_negative();
-    //         x.conditional_negate(x_neg);
+            // x == | 2s/sqrt(v) | == + sqrt(4s²/(ad(1+as²)² - (1-as²)²))
+            let mut x = &(&s + &s) * &Dx;
+            let x_neg = x.is_negative();
+            x.conditional_negate(x_neg);
 
-    //         // y == (1-as²)/(1+as²)
-    //         let y = &u1 * &Dy;
+            // y == (1-as²)/(1+as²)
+            let y = &u1 * &Dy;
 
-    //         // t == ((1+as²) sqrt(4s²/(ad(1+as²)² - (1-as²)²)))/(1-as²)
-    //         let t = &x * &y;
+            // t == ((1+as²) sqrt(4s²/(ad(1+as²)² - (1-as²)²)))/(1-as²)
+            let t = &x * &y;
 
-    //         (
-    //             ok,
-    //             t.is_negative(),
-    //             y.is_zero(),
-    //             RistrettoPoint(EdwardsPoint {
-    //                 X: x,
-    //                 Y: y,
-    //                 Z: one,
-    //                 T: t,
-    //             }),
-    //         )
-    //     }
+            (
+                ok,
+                t.is_negative(),
+                y.is_zero(),
+                RistrettoPoint(EdwardsPoint {
+                    X: x,
+                    Y: y,
+                    Z: one,
+                    T: t,
+                }),
+            )
+        }
 }
 
 // TODO: These might go away
