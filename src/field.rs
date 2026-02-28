@@ -1,5 +1,6 @@
 use curve25519_dalek::traits::Identity;
 use std::ops::{Add, Mul, Sub};
+use subtle::Choice;
 
 // To get access to the field element functions (represented upstream in the verified
 // core as 5 u64 limbs), we need to use the hacl-rs crate directly.
@@ -47,6 +48,34 @@ impl Mul<u64> for FieldElement {
 
 impl FieldElement {
     pub const ONE: Self = Self([1, 0, 0, 0, 0]);
+
+    /// Load a field element from the low 255 bits of a 32-byte input.
+    ///
+    /// This is intentionally non-canonical: it masks the top bit and does not
+    /// reject inputs >= p.
+    ///
+    /// Adapted from the `curve25519-dalek` crate.
+    pub const fn from_bytes(bytes: &[u8; 32]) -> Self {
+        const fn load8_at(input: &[u8; 32], i: usize) -> u64 {
+            (input[i] as u64)
+                | ((input[i + 1] as u64) << 8)
+                | ((input[i + 2] as u64) << 16)
+                | ((input[i + 3] as u64) << 24)
+                | ((input[i + 4] as u64) << 32)
+                | ((input[i + 5] as u64) << 40)
+                | ((input[i + 6] as u64) << 48)
+                | ((input[i + 7] as u64) << 56)
+        }
+
+        let low_51_bit_mask = (1u64 << 51) - 1;
+        Self([
+            load8_at(bytes, 0) & low_51_bit_mask,
+            (load8_at(bytes, 6) >> 3) & low_51_bit_mask,
+            (load8_at(bytes, 12) >> 6) & low_51_bit_mask,
+            (load8_at(bytes, 19) >> 1) & low_51_bit_mask,
+            (load8_at(bytes, 24) >> 12) & low_51_bit_mask,
+        ])
+    }
 
     #[inline]
     pub fn square(self) -> Self {
