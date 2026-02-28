@@ -1,2 +1,3 @@
 # ristretto255
-Verified implementation of ristretto255 prime-order group
+WIP verified implementation of the ristretto255 prime-order group
+
