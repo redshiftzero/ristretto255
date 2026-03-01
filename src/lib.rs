@@ -102,6 +102,7 @@ impl TryFrom<&[u8]> for CompressedRistretto {
 mod decompress {
     use super::*;
 
+    #[hax_lib::attributes]
     pub(super) fn step_1(repr: &CompressedRistretto) -> (Choice, Choice, FieldElement) {
         // Step 1. Check s for validity:
         // 1.a) s must be 32 bytes
@@ -115,6 +116,7 @@ mod decompress {
         (s_encoding_is_canonical, s_is_negative, s)
     }
 
+    #[hax_lib::attributes]
     pub(super) fn step_2(s: FieldElement) -> (Choice, Choice, Choice, RistrettoPoint) {
         // Step 2.  Compute (X:Y:Z:T).
         let one = FieldElement::ONE;

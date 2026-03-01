@@ -46,43 +46,43 @@ let v_SQRT_M1: t_FieldElement =
   <:
   t_FieldElement
 
-let impl_12: Core_models.Clone.t_Clone t_FieldElement =
+let impl_11: Core_models.Clone.t_Clone t_FieldElement =
   { f_clone = (fun x -> x); f_clone_pre = (fun _ -> True); f_clone_post = (fun _ _ -> True) }
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
 assume
-val impl_13': Core_models.Marker.t_Copy t_FieldElement
+val impl_12': Core_models.Marker.t_Copy t_FieldElement
+
+unfold
+let impl_12 = impl_12'
+
+[@@ FStar.Tactics.Typeclasses.tcinstance]
+assume
+val impl_13': Core_models.Fmt.t_Debug t_FieldElement
 
 unfold
 let impl_13 = impl_13'
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
 assume
-val impl_14': Core_models.Fmt.t_Debug t_FieldElement
+val impl_14': Core_models.Marker.t_StructuralPartialEq t_FieldElement
 
 unfold
 let impl_14 = impl_14'
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
 assume
-val impl_15': Core_models.Marker.t_StructuralPartialEq t_FieldElement
+val impl_15': Core_models.Cmp.t_PartialEq t_FieldElement t_FieldElement
 
 unfold
 let impl_15 = impl_15'
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
 assume
-val impl_16': Core_models.Cmp.t_PartialEq t_FieldElement t_FieldElement
+val impl_16': Core_models.Cmp.t_Eq t_FieldElement
 
 unfold
 let impl_16 = impl_16'
-
-[@@ FStar.Tactics.Typeclasses.tcinstance]
-assume
-val impl_17': Core_models.Cmp.t_Eq t_FieldElement
-
-unfold
-let impl_17 = impl_17'
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
 let impl: Curve25519_dalek.Traits.t_Identity t_FieldElement =
@@ -168,7 +168,7 @@ let impl_5: Core_models.Ops.Arith.t_Mul t_FieldElement t_FieldElement =
       FieldElement out <: t_FieldElement
   }
 
-let impl_6__ONE: t_FieldElement =
+let impl_17__ONE: t_FieldElement =
   FieldElement
   (let list = [mk_u64 1; mk_u64 0; mk_u64 0; mk_u64 0; mk_u64 0] in
     FStar.Pervasives.assert_norm (Prims.eq2 (List.Tot.length list) 5);
@@ -176,9 +176,163 @@ let impl_6__ONE: t_FieldElement =
   <:
   t_FieldElement
 
+let impl_17__square (self: t_FieldElement) : t_FieldElement =
+  let (out: t_Array u64 (mk_usize 5)):t_Array u64 (mk_usize 5) =
+    Rust_primitives.Hax.repeat (mk_u64 0) (mk_usize 5)
+  in
+  let (tmp: t_Array u128 (mk_usize 10)):t_Array u128 (mk_usize 10) =
+    Rust_primitives.Hax.repeat (Libcrux_hacl_rs.Fstar.Uint128.uint64_to_uint128 (mk_u64 0) <: u128)
+      (mk_usize 10)
+  in
+  let out:t_Array u64 (mk_usize 5) =
+    Libcrux_hacl_rs.Bignum25519_51_.fsqr out (self._0 <: t_Slice u64) (tmp <: t_Slice u128)
+  in
+  FieldElement out <: t_FieldElement
+
+let impl_17__conditional_negate (self: t_FieldElement) (choice: Subtle.t_Choice) : t_FieldElement =
+  let neg:t_FieldElement =
+    Core_models.Ops.Arith.f_sub #t_FieldElement
+      #t_FieldElement
+      #FStar.Tactics.Typeclasses.solve
+      (Curve25519_dalek.Traits.f_identity #t_FieldElement #FStar.Tactics.Typeclasses.solve ()
+        <:
+        t_FieldElement)
+      self
+  in
+  let mask:u64 =
+    Core_models.Num.impl_u64__wrapping_sub (mk_u64 0)
+      (cast (Subtle.impl_Choice__unwrap_u8 choice <: u8) <: u64)
+  in
+  let self:t_FieldElement =
+    Rust_primitives.Hax.Folds.fold_range (mk_usize 0)
+      (mk_usize 5)
+      (fun self temp_1_ ->
+          let self:t_FieldElement = self in
+          let _:usize = temp_1_ in
+          true)
+      self
+      (fun self i ->
+          let self:t_FieldElement = self in
+          let i:usize = i in
+          {
+            self with
+            _0
+            =
+            Rust_primitives.Hax.Monomorphized_update_at.update_at_usize self._0
+              i
+              ((self._0.[ i ] <: u64) ^.
+                (mask &. ((self._0.[ i ] <: u64) ^. (neg._0.[ i ] <: u64) <: u64) <: u64)
+                <:
+                u64)
+            <:
+            t_Array u64 (mk_usize 5)
+          }
+          <:
+          t_FieldElement)
+  in
+  self
+
+let impl_17__conditional_assign (self other: t_FieldElement) (choice: Subtle.t_Choice)
+    : t_FieldElement =
+  let mask:u64 =
+    Core_models.Num.impl_u64__wrapping_sub (mk_u64 0)
+      (cast (Subtle.impl_Choice__unwrap_u8 choice <: u8) <: u64)
+  in
+  let self:t_FieldElement =
+    Rust_primitives.Hax.Folds.fold_range (mk_usize 0)
+      (mk_usize 5)
+      (fun self temp_1_ ->
+          let self:t_FieldElement = self in
+          let _:usize = temp_1_ in
+          true)
+      self
+      (fun self i ->
+          let self:t_FieldElement = self in
+          let i:usize = i in
+          {
+            self with
+            _0
+            =
+            Rust_primitives.Hax.Monomorphized_update_at.update_at_usize self._0
+              i
+              ((self._0.[ i ] <: u64) ^.
+                (mask &. ((self._0.[ i ] <: u64) ^. (other._0.[ i ] <: u64) <: u64) <: u64)
+                <:
+                u64)
+            <:
+            t_Array u64 (mk_usize 5)
+          }
+          <:
+          t_FieldElement)
+  in
+  self
+
+let impl_17__from_bytes__load8_at (input: t_Array u8 (mk_usize 32)) (i: usize) : u64 =
+  (((((((cast (input.[ i ] <: u8) <: u64) |.
+              ((cast (input.[ i +! mk_usize 1 <: usize ] <: u8) <: u64) <<! mk_i32 8 <: u64)
+              <:
+              u64) |.
+            ((cast (input.[ i +! mk_usize 2 <: usize ] <: u8) <: u64) <<! mk_i32 16 <: u64)
+            <:
+            u64) |.
+          ((cast (input.[ i +! mk_usize 3 <: usize ] <: u8) <: u64) <<! mk_i32 24 <: u64)
+          <:
+          u64) |.
+        ((cast (input.[ i +! mk_usize 4 <: usize ] <: u8) <: u64) <<! mk_i32 32 <: u64)
+        <:
+        u64) |.
+      ((cast (input.[ i +! mk_usize 5 <: usize ] <: u8) <: u64) <<! mk_i32 40 <: u64)
+      <:
+      u64) |.
+    ((cast (input.[ i +! mk_usize 6 <: usize ] <: u8) <: u64) <<! mk_i32 48 <: u64)
+    <:
+    u64) |.
+  ((cast (input.[ i +! mk_usize 7 <: usize ] <: u8) <: u64) <<! mk_i32 56 <: u64)
+
+/// Load a field element from the low 255 bits of a 32-byte input.
+/// This is intentionally non-canonical: it masks the top bit and does not
+/// reject inputs >= p.
+/// Adapted from the `curve25519-dalek` crate.
+let impl_17__from_bytes (bytes: t_Array u8 (mk_usize 32))
+    : Prims.Pure t_FieldElement
+      Prims.l_True
+      (ensures
+        fun r ->
+          let r:t_FieldElement = r in
+          (r._0.[ mk_usize 0 ] <: u64) <. (mk_u64 1 <<! mk_i32 51 <: u64) &&
+          (r._0.[ mk_usize 1 ] <: u64) <. (mk_u64 1 <<! mk_i32 51 <: u64) &&
+          (r._0.[ mk_usize 2 ] <: u64) <. (mk_u64 1 <<! mk_i32 51 <: u64) &&
+          (r._0.[ mk_usize 3 ] <: u64) <. (mk_u64 1 <<! mk_i32 51 <: u64) &&
+          (r._0.[ mk_usize 4 ] <: u64) <. (mk_u64 1 <<! mk_i32 51 <: u64)) =
+  let low_51_bit_mask:u64 = (mk_u64 1 <<! mk_i32 51 <: u64) -! mk_u64 1 in
+  FieldElement
+  (let list =
+      [
+        (impl_17__from_bytes__load8_at bytes (mk_usize 0) <: u64) &. low_51_bit_mask;
+        ((impl_17__from_bytes__load8_at bytes (mk_usize 6) <: u64) >>! mk_i32 3 <: u64) &.
+        low_51_bit_mask;
+        ((impl_17__from_bytes__load8_at bytes (mk_usize 12) <: u64) >>! mk_i32 6 <: u64) &.
+        low_51_bit_mask;
+        ((impl_17__from_bytes__load8_at bytes (mk_usize 19) <: u64) >>! mk_i32 1 <: u64) &.
+        low_51_bit_mask;
+        ((impl_17__from_bytes__load8_at bytes (mk_usize 24) <: u64) >>! mk_i32 12 <: u64) &.
+        low_51_bit_mask
+      ]
+    in
+    FStar.Pervasives.assert_norm (Prims.eq2 (List.Tot.length list) 5);
+    Rust_primitives.Hax.array_of_list 5 list)
+  <:
+  t_FieldElement
+
 /// Serialize this field element to canonical 32-byte encoding.
 /// Adapted from the `curve25519-dalek` crate.
-let impl_6__to_bytes (self: t_FieldElement) : t_Array u8 (mk_usize 32) =
+let impl_17__to_bytes (self: t_FieldElement)
+    : Prims.Pure (t_Array u8 (mk_usize 32))
+      Prims.l_True
+      (ensures
+        fun r ->
+          let r:t_Array u8 (mk_usize 32) = r in
+          ((r.[ mk_usize 31 ] <: u8) &. mk_u8 128 <: u8) =. mk_u8 0) =
   let low_51_bit_mask:u64 = (mk_u64 1 <<! mk_i32 51 <: u64) -! mk_u64 1 in
   let limbs:t_Array u64 (mk_usize 5) = self._0 in
   let limbs:t_Array u64 (mk_usize 5) =
@@ -502,165 +656,27 @@ let impl_1: Subtle.t_ConstantTimeEq t_FieldElement =
     fun (self: t_FieldElement) (other: t_FieldElement) ->
       Subtle.f_ct_eq #(t_Slice u8)
         #FStar.Tactics.Typeclasses.solve
-        (impl_6__to_bytes self <: t_Slice u8)
-        (impl_6__to_bytes other <: t_Slice u8)
+        (impl_17__to_bytes self <: t_Slice u8)
+        (impl_17__to_bytes other <: t_Slice u8)
   }
 
-let impl_6__square (self: t_FieldElement) : t_FieldElement =
-  let (out: t_Array u64 (mk_usize 5)):t_Array u64 (mk_usize 5) =
-    Rust_primitives.Hax.repeat (mk_u64 0) (mk_usize 5)
-  in
-  let (tmp: t_Array u128 (mk_usize 10)):t_Array u128 (mk_usize 10) =
-    Rust_primitives.Hax.repeat (Libcrux_hacl_rs.Fstar.Uint128.uint64_to_uint128 (mk_u64 0) <: u128)
-      (mk_usize 10)
-  in
-  let out:t_Array u64 (mk_usize 5) =
-    Libcrux_hacl_rs.Bignum25519_51_.fsqr out (self._0 <: t_Slice u64) (tmp <: t_Slice u128)
-  in
-  FieldElement out <: t_FieldElement
-
-let impl_6__is_negative (self: t_FieldElement) : Subtle.t_Choice =
-  let bytes:t_Array u8 (mk_usize 32) = impl_6__to_bytes self in
+let impl_17__is_negative (self: t_FieldElement) : Subtle.t_Choice =
+  let bytes:t_Array u8 (mk_usize 32) = impl_17__to_bytes self in
   Core_models.Convert.f_into #u8
     #Subtle.t_Choice
     #FStar.Tactics.Typeclasses.solve
     ((bytes.[ mk_usize 0 ] <: u8) &. mk_u8 1 <: u8)
 
-let impl_6__is_zero (self: t_FieldElement) : Subtle.t_Choice =
+let impl_17__is_zero (self: t_FieldElement) : Subtle.t_Choice =
   let zero:t_Array u8 (mk_usize 32) = Rust_primitives.Hax.repeat (mk_u8 0) (mk_usize 32) in
-  let bytes:t_Array u8 (mk_usize 32) = impl_6__to_bytes self in
+  let bytes:t_Array u8 (mk_usize 32) = impl_17__to_bytes self in
   Subtle.f_ct_eq #(t_Slice u8)
     #FStar.Tactics.Typeclasses.solve
     (bytes <: t_Slice u8)
     (zero <: t_Slice u8)
 
-let impl_6__conditional_negate (self: t_FieldElement) (choice: Subtle.t_Choice) : t_FieldElement =
-  let neg:t_FieldElement =
-    Core_models.Ops.Arith.f_sub #t_FieldElement
-      #t_FieldElement
-      #FStar.Tactics.Typeclasses.solve
-      (Curve25519_dalek.Traits.f_identity #t_FieldElement #FStar.Tactics.Typeclasses.solve ()
-        <:
-        t_FieldElement)
-      self
-  in
-  let mask:u64 =
-    Core_models.Num.impl_u64__wrapping_sub (mk_u64 0)
-      (cast (Subtle.impl_Choice__unwrap_u8 choice <: u8) <: u64)
-  in
-  let self:t_FieldElement =
-    Rust_primitives.Hax.Folds.fold_range (mk_usize 0)
-      (mk_usize 5)
-      (fun self temp_1_ ->
-          let self:t_FieldElement = self in
-          let _:usize = temp_1_ in
-          true)
-      self
-      (fun self i ->
-          let self:t_FieldElement = self in
-          let i:usize = i in
-          {
-            self with
-            _0
-            =
-            Rust_primitives.Hax.Monomorphized_update_at.update_at_usize self._0
-              i
-              ((self._0.[ i ] <: u64) ^.
-                (mask &. ((self._0.[ i ] <: u64) ^. (neg._0.[ i ] <: u64) <: u64) <: u64)
-                <:
-                u64)
-            <:
-            t_Array u64 (mk_usize 5)
-          }
-          <:
-          t_FieldElement)
-  in
-  self
-
-let impl_6__conditional_assign (self other: t_FieldElement) (choice: Subtle.t_Choice)
-    : t_FieldElement =
-  let mask:u64 =
-    Core_models.Num.impl_u64__wrapping_sub (mk_u64 0)
-      (cast (Subtle.impl_Choice__unwrap_u8 choice <: u8) <: u64)
-  in
-  let self:t_FieldElement =
-    Rust_primitives.Hax.Folds.fold_range (mk_usize 0)
-      (mk_usize 5)
-      (fun self temp_1_ ->
-          let self:t_FieldElement = self in
-          let _:usize = temp_1_ in
-          true)
-      self
-      (fun self i ->
-          let self:t_FieldElement = self in
-          let i:usize = i in
-          {
-            self with
-            _0
-            =
-            Rust_primitives.Hax.Monomorphized_update_at.update_at_usize self._0
-              i
-              ((self._0.[ i ] <: u64) ^.
-                (mask &. ((self._0.[ i ] <: u64) ^. (other._0.[ i ] <: u64) <: u64) <: u64)
-                <:
-                u64)
-            <:
-            t_Array u64 (mk_usize 5)
-          }
-          <:
-          t_FieldElement)
-  in
-  self
-
-let impl_6__from_bytes__load8_at (input: t_Array u8 (mk_usize 32)) (i: usize) : u64 =
-  (((((((cast (input.[ i ] <: u8) <: u64) |.
-              ((cast (input.[ i +! mk_usize 1 <: usize ] <: u8) <: u64) <<! mk_i32 8 <: u64)
-              <:
-              u64) |.
-            ((cast (input.[ i +! mk_usize 2 <: usize ] <: u8) <: u64) <<! mk_i32 16 <: u64)
-            <:
-            u64) |.
-          ((cast (input.[ i +! mk_usize 3 <: usize ] <: u8) <: u64) <<! mk_i32 24 <: u64)
-          <:
-          u64) |.
-        ((cast (input.[ i +! mk_usize 4 <: usize ] <: u8) <: u64) <<! mk_i32 32 <: u64)
-        <:
-        u64) |.
-      ((cast (input.[ i +! mk_usize 5 <: usize ] <: u8) <: u64) <<! mk_i32 40 <: u64)
-      <:
-      u64) |.
-    ((cast (input.[ i +! mk_usize 6 <: usize ] <: u8) <: u64) <<! mk_i32 48 <: u64)
-    <:
-    u64) |.
-  ((cast (input.[ i +! mk_usize 7 <: usize ] <: u8) <: u64) <<! mk_i32 56 <: u64)
-
-/// Load a field element from the low 255 bits of a 32-byte input.
-/// This is intentionally non-canonical: it masks the top bit and does not
-/// reject inputs >= p.
-/// Adapted from the `curve25519-dalek` crate.
-let impl_6__from_bytes (bytes: t_Array u8 (mk_usize 32)) : t_FieldElement =
-  let low_51_bit_mask:u64 = (mk_u64 1 <<! mk_i32 51 <: u64) -! mk_u64 1 in
-  FieldElement
-  (let list =
-      [
-        (impl_6__from_bytes__load8_at bytes (mk_usize 0) <: u64) &. low_51_bit_mask;
-        ((impl_6__from_bytes__load8_at bytes (mk_usize 6) <: u64) >>! mk_i32 3 <: u64) &.
-        low_51_bit_mask;
-        ((impl_6__from_bytes__load8_at bytes (mk_usize 12) <: u64) >>! mk_i32 6 <: u64) &.
-        low_51_bit_mask;
-        ((impl_6__from_bytes__load8_at bytes (mk_usize 19) <: u64) >>! mk_i32 1 <: u64) &.
-        low_51_bit_mask;
-        ((impl_6__from_bytes__load8_at bytes (mk_usize 24) <: u64) >>! mk_i32 12 <: u64) &.
-        low_51_bit_mask
-      ]
-    in
-    FStar.Pervasives.assert_norm (Prims.eq2 (List.Tot.length list) 5);
-    Rust_primitives.Hax.array_of_list 5 list)
-  <:
-  t_FieldElement
-
 [@@ FStar.Tactics.Typeclasses.tcinstance]
-let impl_7: Core_models.Ops.Arith.t_Add t_FieldElement t_FieldElement =
+let impl_6: Core_models.Ops.Arith.t_Add t_FieldElement t_FieldElement =
   {
     f_Output = t_FieldElement;
     f_add_pre = (fun (self: t_FieldElement) (rhs: t_FieldElement) -> true);
@@ -676,7 +692,7 @@ let impl_7: Core_models.Ops.Arith.t_Add t_FieldElement t_FieldElement =
   }
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
-let impl_8: Core_models.Ops.Arith.t_Sub t_FieldElement t_FieldElement =
+let impl_7: Core_models.Ops.Arith.t_Sub t_FieldElement t_FieldElement =
   {
     f_Output = t_FieldElement;
     f_sub_pre = (fun (self: t_FieldElement) (rhs: t_FieldElement) -> true);
@@ -692,7 +708,7 @@ let impl_8: Core_models.Ops.Arith.t_Sub t_FieldElement t_FieldElement =
   }
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
-let impl_9: Core_models.Ops.Arith.t_Mul t_FieldElement t_FieldElement =
+let impl_8: Core_models.Ops.Arith.t_Mul t_FieldElement t_FieldElement =
   {
     f_Output = t_FieldElement;
     f_mul_pre = (fun (self: t_FieldElement) (rhs: t_FieldElement) -> true);
@@ -708,8 +724,8 @@ let impl_9: Core_models.Ops.Arith.t_Mul t_FieldElement t_FieldElement =
   }
 
 /// Raise this field element to the power (p-5)/8 = 2^252 - 3.
-let impl_6__pow_p58 (self: t_FieldElement) : t_FieldElement =
-  let acc:t_FieldElement = impl_6__ONE in
+let impl_17__pow_p58 (self: t_FieldElement) : t_FieldElement =
+  let acc:t_FieldElement = impl_17__ONE in
   let acc:t_FieldElement =
     Core_models.Iter.Traits.Iterator.f_fold (Core_models.Iter.Traits.Collect.f_into_iter #(Core_models.Iter.Adapters.Rev.t_Rev
             (Core_models.Ops.Range.t_Range i32))
@@ -730,7 +746,7 @@ let impl_6__pow_p58 (self: t_FieldElement) : t_FieldElement =
       (fun acc i ->
           let acc:t_FieldElement = acc in
           let i:i32 = i in
-          let acc:t_FieldElement = impl_6__square acc in
+          let acc:t_FieldElement = impl_17__square acc in
           if i <>. mk_i32 1
           then
             let acc:t_FieldElement =
@@ -746,7 +762,7 @@ let impl_6__pow_p58 (self: t_FieldElement) : t_FieldElement =
   acc
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
-let impl_10: Core_models.Ops.Arith.t_Neg t_FieldElement =
+let impl_9: Core_models.Ops.Arith.t_Neg t_FieldElement =
   {
     f_Output = t_FieldElement;
     f_neg_pre = (fun (self: t_FieldElement) -> true);
@@ -764,7 +780,7 @@ let impl_10: Core_models.Ops.Arith.t_Neg t_FieldElement =
   }
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
-let impl_11: Core_models.Ops.Arith.t_Neg t_FieldElement =
+let impl_10: Core_models.Ops.Arith.t_Neg t_FieldElement =
   {
     f_Output = t_FieldElement;
     f_neg_pre = (fun (self: t_FieldElement) -> true);
@@ -783,19 +799,19 @@ let impl_11: Core_models.Ops.Arith.t_Neg t_FieldElement =
 /// - `(Choice(1), zero)        ` if `u` is zero;
 /// - `(Choice(0), zero)        ` if `v` is zero and `u` is nonzero;
 /// - `(Choice(0), +sqrt(i*u/v))` if `u/v` is nonsquare (so `i*u/v` is square).
-let impl_6__sqrt_ratio_i (u v: t_FieldElement) : (Subtle.t_Choice & t_FieldElement) =
+let impl_17__sqrt_ratio_i (u v: t_FieldElement) : (Subtle.t_Choice & t_FieldElement) =
   let v3:t_FieldElement =
     Core_models.Ops.Arith.f_mul #t_FieldElement
       #t_FieldElement
       #FStar.Tactics.Typeclasses.solve
-      (impl_6__square v <: t_FieldElement)
+      (impl_17__square v <: t_FieldElement)
       v
   in
   let v7:t_FieldElement =
     Core_models.Ops.Arith.f_mul #t_FieldElement
       #t_FieldElement
       #FStar.Tactics.Typeclasses.solve
-      (impl_6__square v3 <: t_FieldElement)
+      (impl_17__square v3 <: t_FieldElement)
       v
   in
   let r:t_FieldElement =
@@ -809,7 +825,7 @@ let impl_6__sqrt_ratio_i (u v: t_FieldElement) : (Subtle.t_Choice & t_FieldEleme
           v3
         <:
         t_FieldElement)
-      (impl_6__pow_p58 (Core_models.Ops.Arith.f_mul #t_FieldElement
+      (impl_17__pow_p58 (Core_models.Ops.Arith.f_mul #t_FieldElement
               #t_FieldElement
               #FStar.Tactics.Typeclasses.solve
               u
@@ -824,7 +840,7 @@ let impl_6__sqrt_ratio_i (u v: t_FieldElement) : (Subtle.t_Choice & t_FieldEleme
       #t_FieldElement
       #FStar.Tactics.Typeclasses.solve
       v
-      (impl_6__square r <: t_FieldElement)
+      (impl_17__square r <: t_FieldElement)
   in
   let i:t_FieldElement = v_SQRT_M1 in
   let correct_sign_sqrt:Subtle.t_Choice =
@@ -860,7 +876,7 @@ let impl_6__sqrt_ratio_i (u v: t_FieldElement) : (Subtle.t_Choice & t_FieldEleme
       r
   in
   let r:t_FieldElement =
-    impl_6__conditional_assign r
+    impl_17__conditional_assign r
       r_prime
       (Core_models.Ops.Bit.f_bitor #Subtle.t_Choice
           #Subtle.t_Choice
@@ -870,8 +886,8 @@ let impl_6__sqrt_ratio_i (u v: t_FieldElement) : (Subtle.t_Choice & t_FieldEleme
         <:
         Subtle.t_Choice)
   in
-  let r_is_negative:Subtle.t_Choice = impl_6__is_negative r in
-  let r:t_FieldElement = impl_6__conditional_negate r r_is_negative in
+  let r_is_negative:Subtle.t_Choice = impl_17__is_negative r in
+  let r:t_FieldElement = impl_17__conditional_negate r r_is_negative in
   let was_nonzero_square:Subtle.t_Choice =
     Core_models.Ops.Bit.f_bitor #Subtle.t_Choice
       #Subtle.t_Choice
@@ -888,5 +904,5 @@ let impl_6__sqrt_ratio_i (u v: t_FieldElement) : (Subtle.t_Choice & t_FieldEleme
 /// - `(Choice(1), +sqrt(1/self))  ` if `self` is a nonzero square;
 /// - `(Choice(0), zero)           ` if `self` is zero;
 /// - `(Choice(0), +sqrt(i/self))  ` if `self` is a nonzero nonsquare;
-let impl_6__invsqrt (self: t_FieldElement) : (Subtle.t_Choice & t_FieldElement) =
-  impl_6__sqrt_ratio_i impl_6__ONE self
+let impl_17__invsqrt (self: t_FieldElement) : (Subtle.t_Choice & t_FieldElement) =
+  impl_17__sqrt_ratio_i impl_17__ONE self

@@ -68,6 +68,7 @@ impl Mul for FieldElement {
     }
 }
 
+#[hax_lib::attributes]
 impl FieldElement {
     pub const ONE: Self = Self([1, 0, 0, 0, 0]);
 
@@ -77,6 +78,11 @@ impl FieldElement {
     /// reject inputs >= p.
     ///
     /// Adapted from the `curve25519-dalek` crate.
+    #[hax_lib::ensures(|r| r.0[0] < (1u64 << 51)
+        && r.0[1] < (1u64 << 51)
+        && r.0[2] < (1u64 << 51)
+        && r.0[3] < (1u64 << 51)
+        && r.0[4] < (1u64 << 51))]
     pub const fn from_bytes(bytes: &[u8; 32]) -> Self {
         const fn load8_at(input: &[u8; 32], i: usize) -> u64 {
             (input[i] as u64)
@@ -102,6 +108,7 @@ impl FieldElement {
     /// Serialize this field element to canonical 32-byte encoding.
     ///
     /// Adapted from the `curve25519-dalek` crate.
+    #[hax_lib::ensures(|r| (r[31] & 0b1000_0000u8) == 0u8)]
     #[rustfmt::skip]
     pub fn to_bytes(self) -> [u8; 32] {
         let low_51_bit_mask = (1u64 << 51) - 1;
