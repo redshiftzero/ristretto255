@@ -217,7 +217,6 @@ impl FieldElement {
         }
     }
 
-
     /// Attempt to compute `sqrt(1/self)` in constant time.
     ///
     /// Convenience wrapper around `sqrt_ratio_i`.
@@ -308,7 +307,6 @@ impl FieldElement {
 
         acc
     }
-
 }
 
 impl Add<&FieldElement> for &FieldElement {
