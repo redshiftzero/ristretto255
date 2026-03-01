@@ -13,6 +13,8 @@ use subtle::{Choice, ConstantTimeEq};
 pub use field::FieldElement;
 mod field;
 
+pub mod constants;
+
 /// A compressed Ristretto255 point.
 #[derive(Copy, Clone, Eq, Hash)]
 pub struct CompressedRistretto(pub [u8; 32]);

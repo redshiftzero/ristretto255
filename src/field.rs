@@ -1,11 +1,13 @@
 use curve25519_dalek::traits::Identity;
-use std::ops::{Add, Mul, Sub};
+use std::ops::{Add, Mul, Neg, Sub};
 use subtle::{Choice, ConstantTimeEq};
 
 // To get access to the field element functions (represented upstream in the verified
 // core as 5 u64 limbs), we need to use the hacl-rs crate directly.
 pub use libcrux_hacl_rs::bignum25519_51 as hacl;
 use libcrux_hacl_rs::fstar::uint128;
+
+use crate::constants;
 
 // TODO: Make FieldElement pub(crate)
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -14,6 +16,14 @@ pub struct FieldElement(pub [u64; 5]);
 impl Identity for FieldElement {
     fn identity() -> Self {
         Self([0; 5])
+    }
+}
+
+impl ConstantTimeEq for FieldElement {
+    /// Test equality between two `FieldElement`s. Since the internal
+    /// representation is not canonical, normalize to wire format first.
+    fn ct_eq(&self, other: &FieldElement) -> Choice {
+        self.to_bytes().ct_eq(&other.to_bytes())
     }
 }
 
@@ -189,6 +199,116 @@ impl FieldElement {
         let bytes = self.to_bytes();
         bytes.ct_eq(&zero)
     }
+
+    #[inline]
+    pub fn conditional_negate(&mut self, choice: Choice) {
+        let neg = FieldElement::identity() - *self;
+        let mask = (0u64).wrapping_sub(choice.unwrap_u8() as u64);
+        for i in 0..5 {
+            self.0[i] ^= mask & (self.0[i] ^ neg.0[i]);
+        }
+    }
+
+    #[inline]
+    pub fn conditional_assign(&mut self, other: &FieldElement, choice: Choice) {
+        let mask = (0u64).wrapping_sub(choice.unwrap_u8() as u64);
+        for i in 0..5 {
+            self.0[i] ^= mask & (self.0[i] ^ other.0[i]);
+        }
+    }
+
+
+    /// Attempt to compute `sqrt(1/self)` in constant time.
+    ///
+    /// Convenience wrapper around `sqrt_ratio_i`.
+    ///
+    /// This function always returns the nonnegative square root.
+    ///
+    /// # Return
+    ///
+    /// - `(Choice(1), +sqrt(1/self))  ` if `self` is a nonzero square;
+    /// - `(Choice(0), zero)           ` if `self` is zero;
+    /// - `(Choice(0), +sqrt(i/self))  ` if `self` is a nonzero nonsquare;
+    ///
+    pub(crate) fn invsqrt(&self) -> (Choice, FieldElement) {
+        FieldElement::sqrt_ratio_i(&FieldElement::ONE, self)
+    }
+
+    /// Given `FieldElements` `u` and `v`, compute either `sqrt(u/v)`
+    /// or `sqrt(i*u/v)` in constant time.
+    ///
+    /// This function always returns the nonnegative square root.
+    ///
+    /// # Return
+    ///
+    /// - `(Choice(1), +sqrt(u/v))  ` if `v` is nonzero and `u/v` is square;
+    /// - `(Choice(1), zero)        ` if `u` is zero;
+    /// - `(Choice(0), zero)        ` if `v` is zero and `u` is nonzero;
+    /// - `(Choice(0), +sqrt(i*u/v))` if `u/v` is nonsquare (so `i*u/v` is square).
+    ///
+    pub(crate) fn sqrt_ratio_i(u: &FieldElement, v: &FieldElement) -> (Choice, FieldElement) {
+        // Using the same trick as in ed25519 decoding, we merge the
+        // inversion, the square root, and the square test as follows.
+        //
+        // To compute sqrt(α), we can compute β = α^((p+3)/8).
+        // Then β^2 = ±α, so multiplying β by sqrt(-1) if necessary
+        // gives sqrt(α).
+        //
+        // To compute 1/sqrt(α), we observe that
+        //    1/β = α^(p-1 - (p+3)/8) = α^((7p-11)/8)
+        //                            = α^3 * (α^7)^((p-5)/8).
+        //
+        // We can therefore compute sqrt(u/v) = sqrt(u)/sqrt(v)
+        // by first computing
+        //    r = u^((p+3)/8) v^(p-1-(p+3)/8)
+        //      = u u^((p-5)/8) v^3 (v^7)^((p-5)/8)
+        //      = (uv^3) (uv^7)^((p-5)/8).
+        //
+        // If v is nonzero and u/v is square, then r^2 = ±u/v,
+        //                                     so vr^2 = ±u.
+        // If vr^2 =  u, then sqrt(u/v) = r.
+        // If vr^2 = -u, then sqrt(u/v) = r*sqrt(-1).
+        //
+        // If v is zero, r is also zero.
+
+        let v3 = &v.square() * v;
+        let v7 = &v3.square() * v;
+        let mut r = &(u * &v3) * &(u * &v7).pow_p58();
+        let check = v * &r.square();
+
+        let i = &constants::SQRT_M1;
+
+        let correct_sign_sqrt = check.ct_eq(u);
+        let flipped_sign_sqrt = check.ct_eq(&(-u));
+        let flipped_sign_sqrt_i = check.ct_eq(&(&(-u) * i));
+
+        let r_prime = &constants::SQRT_M1 * &r;
+        r.conditional_assign(&r_prime, flipped_sign_sqrt | flipped_sign_sqrt_i);
+
+        // Choose the nonnegative square root.
+        let r_is_negative = r.is_negative();
+        r.conditional_negate(r_is_negative);
+
+        let was_nonzero_square = correct_sign_sqrt | flipped_sign_sqrt;
+
+        (was_nonzero_square, r)
+    }
+
+    /// Raise this field element to the power (p-5)/8 = 2^252 - 3.
+    pub(crate) fn pow_p58(&self) -> FieldElement {
+        let mut acc = FieldElement::ONE;
+
+        // Bits of 2^252 - 3 are 1 for positions 251..=2 and 0.
+        for i in (0..252).rev() {
+            acc = acc.square();
+            if i != 1 {
+                acc = &acc * self;
+            }
+        }
+
+        acc
+    }
+
 }
 
 impl Add<&FieldElement> for &FieldElement {
@@ -212,5 +332,21 @@ impl Mul<&FieldElement> for &FieldElement {
 
     fn mul(self, rhs: &FieldElement) -> Self::Output {
         (*self) * (*rhs)
+    }
+}
+
+impl Neg for FieldElement {
+    type Output = FieldElement;
+
+    fn neg(self) -> Self::Output {
+        FieldElement::identity() - self
+    }
+}
+
+impl Neg for &FieldElement {
+    type Output = FieldElement;
+
+    fn neg(self) -> Self::Output {
+        -*self
     }
 }
