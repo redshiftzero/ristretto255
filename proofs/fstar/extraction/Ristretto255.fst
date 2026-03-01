@@ -3,44 +3,38 @@ module Ristretto255
 open FStar.Mul
 open Core_models
 
-/// A Ristretto encoding.
-type t_CompressedRistretto =
-  | CompressedRistretto : t_Array u8 (mk_usize 32) -> t_CompressedRistretto
+include Ristretto255.Bundle_decompress {t_CompressedRistretto as t_CompressedRistretto}
 
-let impl_1: Core_models.Clone.t_Clone t_CompressedRistretto =
-  { f_clone = (fun x -> x); f_clone_pre = (fun _ -> True); f_clone_post = (fun _ _ -> True) }
+include Ristretto255.Bundle_decompress {CompressedRistretto as CompressedRistretto}
 
-[@@ FStar.Tactics.Typeclasses.tcinstance]
-assume
-val impl': Core_models.Marker.t_Copy t_CompressedRistretto
+include Ristretto255.Bundle_decompress {impl_5 as impl_5}
 
-unfold
-let impl = impl'
+include Ristretto255.Bundle_decompress {impl_6 as impl_6}
 
-[@@ FStar.Tactics.Typeclasses.tcinstance]
-assume
-val impl_3': Core_models.Marker.t_StructuralPartialEq t_CompressedRistretto
+include Ristretto255.Bundle_decompress {impl_7 as impl_7}
 
-unfold
-let impl_3 = impl_3'
+include Ristretto255.Bundle_decompress {impl_8 as impl_8}
 
-[@@ FStar.Tactics.Typeclasses.tcinstance]
-assume
-val impl_4': Core_models.Cmp.t_PartialEq t_CompressedRistretto t_CompressedRistretto
+include Ristretto255.Bundle_decompress {impl as impl}
 
-unfold
-let impl_4 = impl_4'
+include Ristretto255.Bundle_decompress {impl_1 as impl_1}
 
-[@@ FStar.Tactics.Typeclasses.tcinstance]
-assume
-val impl_2': Core_models.Cmp.t_Eq t_CompressedRistretto
+include Ristretto255.Bundle_decompress {impl_9__to_bytes as impl_CompressedRistretto__to_bytes}
 
-unfold
-let impl_2 = impl_2'
+include Ristretto255.Bundle_decompress {impl_9__as_bytes as impl_CompressedRistretto__as_bytes}
 
-[@@ FStar.Tactics.Typeclasses.tcinstance]
-assume
-val impl_5': Core_models.Hash.t_Hash t_CompressedRistretto
+include Ristretto255.Bundle_decompress {impl_9__from_slice as impl_CompressedRistretto__from_slice}
 
-unfold
-let impl_5 = impl_5'
+include Ristretto255.Bundle_decompress {impl_9__decompress as impl_CompressedRistretto__decompress}
+
+include Ristretto255.Bundle_decompress {impl_2 as impl_2}
+
+include Ristretto255.Bundle_decompress {impl_3 as impl_3}
+
+include Ristretto255.Bundle_decompress {impl_4 as impl_4}
+
+include Ristretto255.Bundle_decompress {t_RistrettoPoint as t_RistrettoPoint}
+
+include Ristretto255.Bundle_decompress {RistrettoPoint as RistrettoPoint}
+
+include Ristretto255.Bundle_decompress {t_EdwardsPoint as t_EdwardsPoint}
