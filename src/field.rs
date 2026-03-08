@@ -85,6 +85,7 @@ impl FieldElement {
         && r.0[4] < (1u64 << 51))]
     pub const fn from_bytes(bytes: &[u8; 32]) -> Self {
         #[hax_lib::requires(i + 7 < 32)]
+        #[hax_lib::fstar::options("--ifuel 2 --z3rlimit 50")]
         const fn load8_at(input: &[u8; 32], i: usize) -> u64 {
             (input[i] as u64)
                 | ((input[i + 1] as u64) << 8)
