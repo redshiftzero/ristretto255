@@ -267,7 +267,8 @@ let impl_17__conditional_assign (self other: t_FieldElement) (choice: Subtle.t_C
   in
   self
 
-let impl_17__from_bytes__load8_at (input: t_Array u8 (mk_usize 32)) (i: usize) : u64 =
+let impl_17__from_bytes__load8_at (input: t_Array u8 (mk_usize 32)) (i: usize)
+    : Prims.Pure u64 (requires (i +! mk_usize 7 <: usize) <. mk_usize 32) (fun _ -> Prims.l_True) =
   (((((((cast (input.[ i ] <: u8) <: u64) |.
               ((cast (input.[ i +! mk_usize 1 <: usize ] <: u8) <: u64) <<! mk_i32 8 <: u64)
               <:
