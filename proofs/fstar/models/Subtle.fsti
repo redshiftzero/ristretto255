@@ -20,7 +20,7 @@ class t_ConstantTimeEq (v_Self: Type0) = {
 
 /// Constant-time equality for byte slices.
 [@@ FStar.Tactics.Typeclasses.tcinstance]
-assume val impl_ct_eq_slice_u8 : t_ConstantTimeEq (t_Slice u8)
+let impl_ct_eq_slice_u8 : t_ConstantTimeEq (t_Slice u8) = magic ()
 
 /// `From<u8>` for `Choice`.
 [@@ FStar.Tactics.Typeclasses.tcinstance]
