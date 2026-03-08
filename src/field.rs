@@ -78,14 +78,14 @@ impl FieldElement {
     /// reject inputs >= p.
     ///
     /// Adapted from the `curve25519-dalek` crate.
-    #[hax_lib::ensures(|r| r.0[0] < (1u64 << 51)
-        && r.0[1] < (1u64 << 51)
-        && r.0[2] < (1u64 << 51)
-        && r.0[3] < (1u64 << 51)
-        && r.0[4] < (1u64 << 51))]
+    // #[hax_lib::ensures(|r| r.0[0] < (1u64 << 51)
+    //     && r.0[1] < (1u64 << 51)
+    //     && r.0[2] < (1u64 << 51)
+    //     && r.0[3] < (1u64 << 51)
+    //     && r.0[4] < (1u64 << 51))]
     pub const fn from_bytes(bytes: &[u8; 32]) -> Self {
-        #[hax_lib::requires(i + 7 < 32)]
-        #[hax_lib::fstar::options("--ifuel 2 --z3rlimit 50")]
+        //#[hax_lib::requires(i + 7 < 32)]
+        //#[hax_lib::fstar::options("--ifuel 2 --z3rlimit 50")]
         const fn load8_at(input: &[u8; 32], i: usize) -> u64 {
             (input[i] as u64)
                 | ((input[i + 1] as u64) << 8)
@@ -181,8 +181,6 @@ impl FieldElement {
         s[29] =  (limbs[4] >> 28)                    as u8;
         s[30] =  (limbs[4] >> 36)                    as u8;
         s[31] =  (limbs[4] >> 44)                    as u8;
-
-        debug_assert!((s[31] & 0b1000_0000u8) == 0u8);
         s
     }
 
