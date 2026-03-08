@@ -77,7 +77,7 @@ jobs:
         with:
           toolchain: stable
           targets: wasm32-unknown-unknown
+      - run: rustup target add wasm32-unknown-unknown
       # Swatinem/rust-cache@v2.8.0
       - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0
-      # dtolnay/rust-toolchain@30dc51db75d080812bc4a28ba3f342840b2e7dd7
       - run: cargo build --target wasm32-unknown-unknown
