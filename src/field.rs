@@ -1,4 +1,3 @@
-use curve25519_dalek::traits::Identity;
 use std::ops::{Add, Mul, Neg, Sub};
 use subtle::{Choice, ConstantTimeEq};
 
@@ -8,6 +7,7 @@ pub use libcrux_hacl_rs::bignum25519_51 as hacl;
 use libcrux_hacl_rs::fstar::uint128;
 
 use crate::constants;
+use crate::traits::Identity;
 
 // TODO: Make FieldElement pub(crate)
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

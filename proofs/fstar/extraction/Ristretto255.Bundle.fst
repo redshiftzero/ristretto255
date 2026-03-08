@@ -6,7 +6,7 @@ open Core_models
 let _ =
   (* This module has implicit dependencies, here we make them explicit. *)
   (* The implicit dependencies arise from typeclasses instances. *)
-  let open Curve25519_dalek.Traits in
+  let open Ristretto255.Traits in
   let open Subtle in
   ()
 
@@ -85,7 +85,7 @@ unfold
 let impl_16 = impl_16'
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
-let impl: Curve25519_dalek.Traits.t_Identity t_FieldElement =
+let impl: Ristretto255.Traits.t_Identity t_FieldElement =
   {
     f_identity_pre = (fun (_: Prims.unit) -> true);
     f_identity_post = (fun (_: Prims.unit) (out: t_FieldElement) -> true);
@@ -194,7 +194,7 @@ let impl_17__conditional_negate (self: t_FieldElement) (choice: Subtle.t_Choice)
     Core_models.Ops.Arith.f_sub #t_FieldElement
       #t_FieldElement
       #FStar.Tactics.Typeclasses.solve
-      (Curve25519_dalek.Traits.f_identity #t_FieldElement #FStar.Tactics.Typeclasses.solve ()
+      (Ristretto255.Traits.f_identity #t_FieldElement #FStar.Tactics.Typeclasses.solve ()
         <:
         t_FieldElement)
       self
@@ -773,7 +773,7 @@ let impl_9: Core_models.Ops.Arith.t_Neg t_FieldElement =
       Core_models.Ops.Arith.f_sub #t_FieldElement
         #t_FieldElement
         #FStar.Tactics.Typeclasses.solve
-        (Curve25519_dalek.Traits.f_identity #t_FieldElement #FStar.Tactics.Typeclasses.solve ()
+        (Ristretto255.Traits.f_identity #t_FieldElement #FStar.Tactics.Typeclasses.solve ()
           <:
           t_FieldElement)
         self

@@ -6,8 +6,8 @@ open Core_models
 let _ =
   (* This module has implicit dependencies, here we make them explicit. *)
   (* The implicit dependencies arise from typeclasses instances. *)
-  let open Curve25519_dalek.Traits in
   let open Ristretto255.Field in
+  let open Ristretto255.Traits in
   let open Subtle in
   ()
 
@@ -112,7 +112,7 @@ let impl_9__from_slice (bytes: t_Slice u8)
     CompressedRistretto
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
-let impl_2: Curve25519_dalek.Traits.t_Identity t_CompressedRistretto =
+let impl_2: Ristretto255.Traits.t_Identity t_CompressedRistretto =
   {
     f_identity_pre = (fun (_: Prims.unit) -> true);
     f_identity_post = (fun (_: Prims.unit) (out: t_CompressedRistretto) -> true);
@@ -132,7 +132,7 @@ let impl_3: Core_models.Default.t_Default t_CompressedRistretto =
     f_default
     =
     fun (_: Prims.unit) ->
-      Curve25519_dalek.Traits.f_identity #t_CompressedRistretto #FStar.Tactics.Typeclasses.solve ()
+      Ristretto255.Traits.f_identity #t_CompressedRistretto #FStar.Tactics.Typeclasses.solve ()
   }
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]

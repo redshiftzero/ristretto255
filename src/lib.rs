@@ -3,8 +3,6 @@
 //!
 //! It is designed to be a drop-in replacement for the `curve25519-dalek` crate.
 
-use curve25519_dalek::traits::Identity;
-
 // TODO Make no_std compatible.
 use std::array::TryFromSliceError;
 
@@ -12,6 +10,9 @@ use subtle::{Choice, ConstantTimeEq};
 
 pub use field::FieldElement;
 mod field;
+
+mod traits;
+pub use traits::Identity;
 
 pub mod constants;
 
