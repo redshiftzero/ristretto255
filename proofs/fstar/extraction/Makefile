@@ -104,7 +104,7 @@ export FINDLIBS
 
 FSTAR_INCLUDE_DIRS_EXTRA ?=
 FINDLIBS_OUTPUT := $(shell bash -c '${FINDLIBS}')
-FSTAR_INCLUDE_DIRS = $(HACL_HOME)/lib $(FSTAR_INCLUDE_DIRS_EXTRA) $(FINDLIBS_OUTPUT) ../models
+FSTAR_INCLUDE_DIRS = $(HACL_HOME)/lib $(FSTAR_INCLUDE_DIRS_EXTRA) ../models $(FINDLIBS_OUTPUT)
 
 # Make sure FSTAR_INCLUDE_DIRS has the `proof-libs`, print hints and
 # an error message otherwise
