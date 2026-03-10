@@ -33,6 +33,8 @@ include Ristretto255.Bundle {impl_5 as impl_5}
 
 include Ristretto255.Bundle {impl_17__ONE as impl_FieldElement__ONE}
 
+include Ristretto255.Bundle {impl_17__load8_at as impl_FieldElement__load8_at}
+
 include Ristretto255.Bundle {impl_17__from_bytes as impl_FieldElement__from_bytes}
 
 include Ristretto255.Bundle {impl_17__to_bytes as impl_FieldElement__to_bytes}
@@ -52,8 +54,6 @@ include Ristretto255.Bundle {impl_17__invsqrt as impl_FieldElement__invsqrt}
 include Ristretto255.Bundle {impl_17__sqrt_ratio_i as impl_FieldElement__sqrt_ratio_i}
 
 include Ristretto255.Bundle {impl_17__pow_p58 as impl_FieldElement__pow_p58}
-
-include Ristretto255.Bundle {impl_17__from_bytes__load8_at as impl_FieldElement__from_bytes__load8_at}
 
 include Ristretto255.Bundle {impl_6 as impl_6}
 

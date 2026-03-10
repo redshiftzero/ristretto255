@@ -267,8 +267,8 @@ let impl_17__conditional_assign (self other: t_FieldElement) (choice: Subtle.t_C
   in
   self
 
-let impl_17__from_bytes__load8_at (input: t_Array u8 (mk_usize 32)) (i: usize)
-    : Prims.Pure u64 (requires (i +! mk_usize 7 <: usize) <. mk_usize 32) (fun _ -> Prims.l_True) =
+let impl_17__load8_at (input: t_Array u8 (mk_usize 32)) (i: usize)
+    : Prims.Pure u64 (requires Rust_primitives.Integers.v i + 7 < 32) (fun _ -> Prims.l_True) =
   (((((((cast (input.[ i ] <: u8) <: u64) |.
               ((cast (input.[ i +! mk_usize 1 <: usize ] <: u8) <: u64) <<! mk_i32 8 <: u64)
               <:
@@ -294,30 +294,16 @@ let impl_17__from_bytes__load8_at (input: t_Array u8 (mk_usize 32)) (i: usize)
 /// This is intentionally non-canonical: it masks the top bit and does not
 /// reject inputs >= p.
 /// Adapted from the `curve25519-dalek` crate.
-let impl_17__from_bytes (bytes: t_Array u8 (mk_usize 32))
-    : Prims.Pure t_FieldElement
-      Prims.l_True
-      (ensures
-        fun r ->
-          let r:t_FieldElement = r in
-          (r._0.[ mk_usize 0 ] <: u64) <. (mk_u64 1 <<! mk_i32 51 <: u64) &&
-          (r._0.[ mk_usize 1 ] <: u64) <. (mk_u64 1 <<! mk_i32 51 <: u64) &&
-          (r._0.[ mk_usize 2 ] <: u64) <. (mk_u64 1 <<! mk_i32 51 <: u64) &&
-          (r._0.[ mk_usize 3 ] <: u64) <. (mk_u64 1 <<! mk_i32 51 <: u64) &&
-          (r._0.[ mk_usize 4 ] <: u64) <. (mk_u64 1 <<! mk_i32 51 <: u64)) =
-  let low_51_bit_mask:u64 = (mk_u64 1 <<! mk_i32 51 <: u64) -! mk_u64 1 in
+let impl_17__from_bytes (bytes: t_Array u8 (mk_usize 32)) : t_FieldElement =
+  let (low_51_bit_mask: u64):u64 = mk_u64 2251799813685247 in
   FieldElement
   (let list =
       [
-        (impl_17__from_bytes__load8_at bytes (mk_usize 0) <: u64) &. low_51_bit_mask;
-        ((impl_17__from_bytes__load8_at bytes (mk_usize 6) <: u64) >>! mk_i32 3 <: u64) &.
-        low_51_bit_mask;
-        ((impl_17__from_bytes__load8_at bytes (mk_usize 12) <: u64) >>! mk_i32 6 <: u64) &.
-        low_51_bit_mask;
-        ((impl_17__from_bytes__load8_at bytes (mk_usize 19) <: u64) >>! mk_i32 1 <: u64) &.
-        low_51_bit_mask;
-        ((impl_17__from_bytes__load8_at bytes (mk_usize 24) <: u64) >>! mk_i32 12 <: u64) &.
-        low_51_bit_mask
+        (impl_17__load8_at bytes (mk_usize 0) <: u64) &. low_51_bit_mask;
+        ((impl_17__load8_at bytes (mk_usize 6) <: u64) >>! mk_i32 3 <: u64) &. low_51_bit_mask;
+        ((impl_17__load8_at bytes (mk_usize 12) <: u64) >>! mk_i32 6 <: u64) &. low_51_bit_mask;
+        ((impl_17__load8_at bytes (mk_usize 19) <: u64) >>! mk_i32 1 <: u64) &. low_51_bit_mask;
+        ((impl_17__load8_at bytes (mk_usize 24) <: u64) >>! mk_i32 12 <: u64) &. low_51_bit_mask
       ]
     in
     FStar.Pervasives.assert_norm (Prims.eq2 (List.Tot.length list) 5);
@@ -634,14 +620,6 @@ let impl_17__to_bytes (self: t_FieldElement)
     Rust_primitives.Hax.Monomorphized_update_at.update_at_usize s
       (mk_usize 31)
       (cast ((limbs.[ mk_usize 4 ] <: u64) >>! mk_i32 44 <: u64) <: u8)
-  in
-  let _:Prims.unit =
-    if true
-    then
-      let _:Prims.unit =
-        Hax_lib.v_assert (((s.[ mk_usize 31 ] <: u8) &. mk_u8 128 <: u8) =. mk_u8 0 <: bool)
-      in
-      ()
   in
   s
 

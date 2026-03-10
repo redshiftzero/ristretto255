@@ -72,6 +72,19 @@ impl Mul for FieldElement {
 impl FieldElement {
     pub const ONE: Self = Self([1, 0, 0, 0, 0]);
 
+    #[hax_lib::requires(fstar!("Rust_primitives.Integers.v i + 7 < 32"))]
+    const fn load8_at(input: &[u8; 32], i: usize) -> u64 {
+        let res = (input[i] as u64)
+            | ((input[i + 1] as u64) << 8)
+            | ((input[i + 2] as u64) << 16)
+            | ((input[i + 3] as u64) << 24)
+            | ((input[i + 4] as u64) << 32)
+            | ((input[i + 5] as u64) << 40)
+            | ((input[i + 6] as u64) << 48)
+            | ((input[i + 7] as u64) << 56);
+        res
+    }
+
     /// Load a field element from the low 255 bits of a 32-byte input.
     ///
     /// This is intentionally non-canonical: it masks the top bit and does not
@@ -83,28 +96,16 @@ impl FieldElement {
     //     && r.0[2] < (1u64 << 51)
     //     && r.0[3] < (1u64 << 51)
     //     && r.0[4] < (1u64 << 51))]
-    pub const fn from_bytes(bytes: &[u8; 32]) -> Self {
-        //#[hax_lib::requires(i + 7 < 32)]
-        //#[hax_lib::fstar::options("--ifuel 2 --z3rlimit 50")]
-        const fn load8_at(input: &[u8; 32], i: usize) -> u64 {
-            (input[i] as u64)
-                | ((input[i + 1] as u64) << 8)
-                | ((input[i + 2] as u64) << 16)
-                | ((input[i + 3] as u64) << 24)
-                | ((input[i + 4] as u64) << 32)
-                | ((input[i + 5] as u64) << 40)
-                | ((input[i + 6] as u64) << 48)
-                | ((input[i + 7] as u64) << 56)
-        }
-
-        let low_51_bit_mask = (1u64 << 51) - 1;
-        Self([
-            load8_at(bytes, 0) & low_51_bit_mask,
-            (load8_at(bytes, 6) >> 3) & low_51_bit_mask,
-            (load8_at(bytes, 12) >> 6) & low_51_bit_mask,
-            (load8_at(bytes, 19) >> 1) & low_51_bit_mask,
-            (load8_at(bytes, 24) >> 12) & low_51_bit_mask,
-        ])
+    pub const fn from_bytes(bytes: &[u8; 32]) -> Self { 
+        let low_51_bit_mask: u64 = 2251799813685247u64; // (1u64 << 51) - 1  
+        let res = Self([
+            Self::load8_at(bytes, 0) & low_51_bit_mask,
+            (Self::load8_at(bytes, 6) >> 3) & low_51_bit_mask,
+            (Self::load8_at(bytes, 12) >> 6) & low_51_bit_mask,
+            (Self::load8_at(bytes, 19) >> 1) & low_51_bit_mask,
+            (Self::load8_at(bytes, 24) >> 12) & low_51_bit_mask,
+        ]);
+        res
     }
 
     /// Serialize this field element to canonical 32-byte encoding.
