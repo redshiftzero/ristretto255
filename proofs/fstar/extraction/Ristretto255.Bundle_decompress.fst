@@ -15,25 +15,25 @@ let _ =
 type t_CompressedRistretto =
   | CompressedRistretto : t_Array u8 (mk_usize 32) -> t_CompressedRistretto
 
-let impl_6: Core_models.Clone.t_Clone t_CompressedRistretto =
+let impl_3: Core_models.Clone.t_Clone t_CompressedRistretto =
   { f_clone = (fun x -> x); f_clone_pre = (fun _ -> True); f_clone_post = (fun _ _ -> True) }
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
 assume
-val impl_5': Core_models.Marker.t_Copy t_CompressedRistretto
+val impl_2': Core_models.Marker.t_Copy t_CompressedRistretto
+
+unfold
+let impl_2 = impl_2'
+
+[@@ FStar.Tactics.Typeclasses.tcinstance]
+assume
+val impl_5': Core_models.Hash.t_Hash t_CompressedRistretto
 
 unfold
 let impl_5 = impl_5'
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
-assume
-val impl_8': Core_models.Hash.t_Hash t_CompressedRistretto
-
-unfold
-let impl_8 = impl_8'
-
-[@@ FStar.Tactics.Typeclasses.tcinstance]
-let impl: Core_models.Cmp.t_PartialEq t_CompressedRistretto t_CompressedRistretto =
+let impl_6: Core_models.Cmp.t_PartialEq t_CompressedRistretto t_CompressedRistretto =
   {
     f_eq_pre = (fun (self: t_CompressedRistretto) (other: t_CompressedRistretto) -> true);
     f_eq_post
@@ -55,19 +55,19 @@ let impl: Core_models.Cmp.t_PartialEq t_CompressedRistretto t_CompressedRistrett
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
 assume
-val impl_7': Core_models.Cmp.t_Eq t_CompressedRistretto
+val impl_4': Core_models.Cmp.t_Eq t_CompressedRistretto
 
 unfold
-let impl_7 = impl_7'
+let impl_4 = impl_4'
 
 /// Copy the bytes of this `CompressedRistretto`.
-let impl_9__to_bytes (self: t_CompressedRistretto) : t_Array u8 (mk_usize 32) = self._0
+let impl_8__to_bytes (self: t_CompressedRistretto) : t_Array u8 (mk_usize 32) = self._0
 
 /// View this `CompressedRistretto` as an array of bytes.
-let impl_9__as_bytes (self: t_CompressedRistretto) : t_Array u8 (mk_usize 32) = self._0
+let impl_8__as_bytes (self: t_CompressedRistretto) : t_Array u8 (mk_usize 32) = self._0
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
-let impl_1: Subtle.t_ConstantTimeEq t_CompressedRistretto =
+let impl_7: Subtle.t_ConstantTimeEq t_CompressedRistretto =
   {
     f_ct_eq_pre = (fun (self: t_CompressedRistretto) (other: t_CompressedRistretto) -> true);
     f_ct_eq_post
@@ -79,19 +79,19 @@ let impl_1: Subtle.t_ConstantTimeEq t_CompressedRistretto =
     fun (self: t_CompressedRistretto) (other: t_CompressedRistretto) ->
       Subtle.f_ct_eq #(t_Slice u8)
         #FStar.Tactics.Typeclasses.solve
-        (impl_9__as_bytes self <: t_Slice u8)
-        (impl_9__as_bytes other <: t_Slice u8)
+        (impl_8__as_bytes self <: t_Slice u8)
+        (impl_8__as_bytes other <: t_Slice u8)
   }
 
 /// Construct a `CompressedRistretto` from a slice of bytes.
 /// # Errors
 /// Returns [`TryFromSliceError`] if the input `bytes` slice does not have
 /// a length of 32.
-let impl_9__from_slice (bytes: t_Slice u8)
+let impl_8__from_slice (bytes: t_Slice u8)
     : Prims.Pure
       (Core_models.Result.t_Result t_CompressedRistretto Core_models.Array.t_TryFromSliceError)
-      Prims.l_True
-      (fun _ -> True) =
+      (requires True)
+      (fun _ -> Prims.l_True) =
   Core_models.Result.impl__map #(t_Array u8 (mk_usize 32))
     #Core_models.Array.t_TryFromSliceError
     #t_CompressedRistretto
@@ -104,7 +104,7 @@ let impl_9__from_slice (bytes: t_Slice u8)
     CompressedRistretto
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
-let impl_2: Ristretto255.Traits.t_Identity t_CompressedRistretto =
+let impl: Ristretto255.Traits.t_Identity t_CompressedRistretto =
   {
     f_identity_pre = (fun (_: Prims.unit) -> true);
     f_identity_post = (fun (_: Prims.unit) (out: t_CompressedRistretto) -> true);
@@ -117,7 +117,7 @@ let impl_2: Ristretto255.Traits.t_Identity t_CompressedRistretto =
   }
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
-let impl_3: Core_models.Default.t_Default t_CompressedRistretto =
+let impl_1: Core_models.Default.t_Default t_CompressedRistretto =
   {
     f_default_pre = (fun (_: Prims.unit) -> true);
     f_default_post = (fun (_: Prims.unit) (out: t_CompressedRistretto) -> true);
@@ -128,7 +128,7 @@ let impl_3: Core_models.Default.t_Default t_CompressedRistretto =
   }
 
 [@@ FStar.Tactics.Typeclasses.tcinstance]
-let impl_4: Core_models.Convert.t_TryFrom t_CompressedRistretto (t_Slice u8) =
+let impl_9: Core_models.Convert.t_TryFrom t_CompressedRistretto (t_Slice u8) =
   {
     f_Error = Core_models.Array.t_TryFromSliceError;
     f_try_from_pre = (fun (slice: t_Slice u8) -> true);
@@ -140,7 +140,7 @@ let impl_4: Core_models.Convert.t_TryFrom t_CompressedRistretto (t_Slice u8) =
           Core_models.Result.t_Result t_CompressedRistretto Core_models.Array.t_TryFromSliceError)
         ->
         true);
-    f_try_from = fun (slice: t_Slice u8) -> impl_9__from_slice slice
+    f_try_from = fun (slice: t_Slice u8) -> impl_8__from_slice slice
   }
 
 type t_EdwardsPoint = {
@@ -155,7 +155,7 @@ type t_RistrettoPoint = | RistrettoPoint : t_EdwardsPoint -> t_RistrettoPoint
 let step_1_ (repr: t_CompressedRistretto)
     : (Subtle.t_Choice & Subtle.t_Choice & Ristretto255.Field.t_FieldElement) =
   let s:Ristretto255.Field.t_FieldElement =
-    Ristretto255.Field.impl_FieldElement__from_bytes (impl_9__as_bytes repr
+    Ristretto255.Field.impl_FieldElement__from_bytes (impl_8__as_bytes repr
         <:
         t_Array u8 (mk_usize 32))
   in
@@ -166,7 +166,7 @@ let step_1_ (repr: t_CompressedRistretto)
       (s_bytes_check.[ Core_models.Ops.Range.RangeFull <: Core_models.Ops.Range.t_RangeFull ]
         <:
         t_Slice u8)
-      (impl_9__as_bytes repr <: t_Slice u8)
+      (impl_8__as_bytes repr <: t_Slice u8)
   in
   let s_is_negative:Subtle.t_Choice = Ristretto255.Field.impl_FieldElement__is_negative s in
   s_encoding_is_canonical, s_is_negative, s
@@ -280,7 +280,7 @@ let step_2_ (s: Ristretto255.Field.t_FieldElement)
 /// # Return
 /// - `Some(RistrettoPoint)` if `self` was the canonical encoding of a point;
 /// - `None` if `self` was not the canonical encoding of a point.
-let impl_9__decompress (self: t_CompressedRistretto) : Core_models.Option.t_Option t_RistrettoPoint =
+let impl_8__decompress (self: t_CompressedRistretto) : Core_models.Option.t_Option t_RistrettoPoint =
   let
   (s_encoding_is_canonical: Subtle.t_Choice),
   (s_is_negative: Subtle.t_Choice),

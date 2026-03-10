@@ -21,7 +21,6 @@ pub mod constants;
 pub struct CompressedRistretto(pub [u8; 32]);
 
 #[hax_lib::attributes]
-#[hax_lib::fstar::verification_status(lax)]
 impl PartialEq for CompressedRistretto {
     fn eq(&self, other: &Self) -> bool {
         self.0.ct_eq(&other.0).into()
@@ -29,7 +28,6 @@ impl PartialEq for CompressedRistretto {
 }
 
 #[hax_lib::attributes]
-#[hax_lib::fstar::verification_status(lax)]
 impl ConstantTimeEq for CompressedRistretto {
     fn ct_eq(&self, other: &CompressedRistretto) -> Choice {
         self.as_bytes().ct_eq(other.as_bytes())
@@ -37,7 +35,6 @@ impl ConstantTimeEq for CompressedRistretto {
 }
 
 #[hax_lib::attributes]
-#[hax_lib::fstar::verification_status(lax)]
 impl CompressedRistretto {
     /// Copy the bytes of this `CompressedRistretto`.
     pub const fn to_bytes(&self) -> [u8; 32] {
@@ -55,7 +52,7 @@ impl CompressedRistretto {
     ///
     /// Returns [`TryFromSliceError`] if the input `bytes` slice does not have
     /// a length of 32.
-    #[hax_lib::requires(fstar!("True"))]
+    #[hax_lib::requires(fstar!("True"))] // TODO: Remove
     pub fn from_slice(bytes: &[u8]) -> Result<CompressedRistretto, TryFromSliceError> {
         bytes.try_into().map(CompressedRistretto)
     }
@@ -97,7 +94,6 @@ impl Default for CompressedRistretto {
 }
 
 #[hax_lib::attributes]
-#[hax_lib::fstar::verification_status(lax)]
 impl TryFrom<&[u8]> for CompressedRistretto {
     type Error = TryFromSliceError;
 
