@@ -20,7 +20,11 @@ class t_ConstantTimeEq (v_Self: Type0) = {
 
 /// Constant-time equality for byte slices.
 [@@ FStar.Tactics.Typeclasses.tcinstance]
-let impl_ct_eq_slice_u8 : t_ConstantTimeEq (t_Slice u8) = magic ()
+let impl_ct_eq_slice_u8 : t_ConstantTimeEq (t_Slice u8) = {
+  f_ct_eq_pre  = (fun _ _ -> True);
+  f_ct_eq_post = (fun _ _ _ -> True);
+  f_ct_eq = magic ()
+}
 
 /// `From<u8>` for `Choice`.
 [@@ FStar.Tactics.Typeclasses.tcinstance]
@@ -29,6 +33,21 @@ let impl_from_u8 : Core_models.Convert.t_From t_Choice u8 =
     f_from_pre  = (fun (_: u8) -> true);
     f_from_post = (fun (_: u8) (_: t_Choice) -> true);
     f_from      = fun (x: u8) -> Choice x
+  }
+
+/// `Not` for `Choice` (bitwise NOT of the underlying byte, then mask to 1 bit).
+[@@ FStar.Tactics.Typeclasses.tcinstance]
+let impl_not_choice : Rust_primitives.Notations.negation_tc t_Choice = {
+  Rust_primitives.Notations.op_Tilde_Dot = fun (x: t_Choice) -> Choice (mk_u8 1 -. x._0)
+}
+
+/// `Into<bool>` for `Choice` (nonzero = true).
+[@@ FStar.Tactics.Typeclasses.tcinstance]
+let impl_into_bool : Core_models.Convert.t_Into t_Choice bool =
+  {
+    f_into_pre  = (fun (_: t_Choice) -> true);
+    f_into_post = (fun (_: t_Choice) (_: bool) -> true);
+    f_into      = fun (x: t_Choice) -> x._0 <> mk_u8 0
   }
 
 /// `BitOr` instance for `Choice` (bitwise OR of the underlying bytes).

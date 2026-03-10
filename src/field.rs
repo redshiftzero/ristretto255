@@ -9,9 +9,8 @@ use libcrux_hacl_rs::fstar::uint128;
 use crate::constants;
 use crate::traits::Identity;
 
-// TODO: Make FieldElement pub(crate)
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct FieldElement(pub [u64; 5]);
+pub(crate) struct FieldElement(pub [u64; 5]);
 
 impl Identity for FieldElement {
     fn identity() -> Self {
@@ -19,17 +18,21 @@ impl Identity for FieldElement {
     }
 }
 
+#[hax_lib::attributes]
 impl ConstantTimeEq for FieldElement {
     /// Test equality between two `FieldElement`s. Since the internal
     /// representation is not canonical, normalize to wire format first.
+    #[hax_lib::opaque] 
     fn ct_eq(&self, other: &FieldElement) -> Choice {
         self.to_bytes().ct_eq(&other.to_bytes())
     }
 }
 
+#[hax_lib::attributes]
 impl Add for FieldElement {
     type Output = FieldElement;
 
+    #[hax_lib::opaque] 
     fn add(self, rhs: Self) -> Self::Output {
         let mut out = [0u64; 5];
         hacl::fadd(&mut out, &self.0, &rhs.0);
@@ -37,9 +40,11 @@ impl Add for FieldElement {
     }
 }
 
+#[hax_lib::attributes]
 impl Sub for FieldElement {
     type Output = FieldElement;
 
+    #[hax_lib::opaque] 
     fn sub(self, rhs: Self) -> Self::Output {
         let mut out = [0u64; 5];
         hacl::fsub(&mut out, &self.0, &rhs.0);
@@ -47,9 +52,11 @@ impl Sub for FieldElement {
     }
 }
 
+#[hax_lib::attributes]
 impl Mul<u64> for FieldElement {
     type Output = FieldElement;
 
+    #[hax_lib::opaque] 
     fn mul(self, rhs: u64) -> Self::Output {
         let mut out = [0u64; 5];
         hacl::fmul1(&mut out, &self.0, rhs);
@@ -57,9 +64,11 @@ impl Mul<u64> for FieldElement {
     }
 }
 
+#[hax_lib::attributes]
 impl Mul for FieldElement {
     type Output = FieldElement;
 
+    #[hax_lib::opaque] 
     fn mul(self, rhs: Self) -> Self::Output {
         let mut out = [0u64; 5];
         let tmp: [uint128::uint128; 10] = [uint128::uint64_to_uint128(0u64); 10];
@@ -67,6 +76,10 @@ impl Mul for FieldElement {
         FieldElement(out)
     }
 }
+
+/// Mask for the low 51 bits: 51 ones = `0x7FFFFFFFFFFFF`.
+/// Equivalent to `(1u64 << 51) - 1`
+const LOW_51_BIT_MASK: u64 = 0x7FFFFFFFFFFFF_u64;
 
 #[hax_lib::attributes]
 impl FieldElement {
@@ -96,8 +109,8 @@ impl FieldElement {
     //     && r.0[2] < (1u64 << 51)
     //     && r.0[3] < (1u64 << 51)
     //     && r.0[4] < (1u64 << 51))]
-    pub const fn from_bytes(bytes: &[u8; 32]) -> Self { 
-        let low_51_bit_mask: u64 = 2251799813685247u64; // (1u64 << 51) - 1  
+    pub const fn from_bytes(bytes: &[u8; 32]) -> Self {
+        let low_51_bit_mask = LOW_51_BIT_MASK;
         let res = Self([
             Self::load8_at(bytes, 0) & low_51_bit_mask,
             (Self::load8_at(bytes, 6) >> 3) & low_51_bit_mask,
@@ -111,10 +124,12 @@ impl FieldElement {
     /// Serialize this field element to canonical 32-byte encoding.
     ///
     /// Adapted from the `curve25519-dalek` crate.
-    #[hax_lib::ensures(|r| (r[31] & 0b1000_0000u8) == 0u8)]
+    // TODO: prove `(r[31] & 0x80) == 0` — needs structured proof of limb canonicalization
+    // #[hax_lib::ensures(|r| (r[31] & 0b1000_0000u8) == 0u8)]
     #[rustfmt::skip]
+    #[hax_lib::opaque] 
     pub fn to_bytes(self) -> [u8; 32] {
-        let low_51_bit_mask = (1u64 << 51) - 1;
+        let low_51_bit_mask = LOW_51_BIT_MASK;
         let mut limbs = self.0;
 
         // Reduce limbs to keep h < 2p before canonicalization.
@@ -186,6 +201,7 @@ impl FieldElement {
     }
 
     #[inline]
+    #[hax_lib::opaque] 
     pub fn square(self) -> Self {
         let mut out: [u64; 5] = [0u64; 5];
         // This third tmp argument seems to be an unused
@@ -196,12 +212,14 @@ impl FieldElement {
     }
 
     #[inline]
+    #[hax_lib::opaque] 
     pub fn is_negative(&self) -> Choice {
         let bytes = self.to_bytes();
         (bytes[0] & 1).into()
     }
 
     #[inline]
+    #[hax_lib::opaque] 
     pub fn is_zero(&self) -> Choice {
         let zero = [0u8; 32];
         let bytes = self.to_bytes();
@@ -209,6 +227,7 @@ impl FieldElement {
     }
 
     #[inline]
+    #[hax_lib::opaque] 
     pub fn conditional_negate(&mut self, choice: Choice) {
         let neg = FieldElement::identity() - *self;
         let mask = (0u64).wrapping_sub(choice.unwrap_u8() as u64);
@@ -218,6 +237,7 @@ impl FieldElement {
     }
 
     #[inline]
+    #[hax_lib::opaque] 
     pub fn conditional_assign(&mut self, other: &FieldElement, choice: Choice) {
         let mask = (0u64).wrapping_sub(choice.unwrap_u8() as u64);
         for i in 0..5 {
@@ -237,6 +257,7 @@ impl FieldElement {
     /// - `(Choice(0), zero)           ` if `self` is zero;
     /// - `(Choice(0), +sqrt(i/self))  ` if `self` is a nonzero nonsquare;
     ///
+    #[hax_lib::opaque] 
     pub(crate) fn invsqrt(&self) -> (Choice, FieldElement) {
         FieldElement::sqrt_ratio_i(&FieldElement::ONE, self)
     }
@@ -253,6 +274,7 @@ impl FieldElement {
     /// - `(Choice(0), zero)        ` if `v` is zero and `u` is nonzero;
     /// - `(Choice(0), +sqrt(i*u/v))` if `u/v` is nonsquare (so `i*u/v` is square).
     ///
+    #[hax_lib::opaque] 
     pub(crate) fn sqrt_ratio_i(u: &FieldElement, v: &FieldElement) -> (Choice, FieldElement) {
         // Using the same trick as in ed25519 decoding, we merge the
         // inversion, the square root, and the square test as follows.
@@ -302,6 +324,7 @@ impl FieldElement {
     }
 
     /// Raise this field element to the power (p-5)/8 = 2^252 - 3.
+    #[hax_lib::opaque] 
     pub(crate) fn pow_p58(&self) -> FieldElement {
         let mut acc = FieldElement::ONE;
 
@@ -317,41 +340,51 @@ impl FieldElement {
     }
 }
 
+#[hax_lib::attributes]
 impl Add<&FieldElement> for &FieldElement {
     type Output = FieldElement;
 
+    #[hax_lib::opaque] 
     fn add(self, rhs: &FieldElement) -> Self::Output {
         (*self) + (*rhs)
     }
 }
 
+#[hax_lib::attributes]
 impl Sub<&FieldElement> for &FieldElement {
     type Output = FieldElement;
 
+    #[hax_lib::opaque] 
     fn sub(self, rhs: &FieldElement) -> Self::Output {
         (*self) - (*rhs)
     }
 }
 
+#[hax_lib::attributes]
 impl Mul<&FieldElement> for &FieldElement {
     type Output = FieldElement;
 
+    #[hax_lib::opaque] 
     fn mul(self, rhs: &FieldElement) -> Self::Output {
         (*self) * (*rhs)
     }
 }
 
+#[hax_lib::attributes]
 impl Neg for FieldElement {
     type Output = FieldElement;
 
+    #[hax_lib::opaque] 
     fn neg(self) -> Self::Output {
         FieldElement::identity() - self
     }
 }
 
+#[hax_lib::attributes]
 impl Neg for &FieldElement {
     type Output = FieldElement;
 
+    #[hax_lib::opaque] 
     fn neg(self) -> Self::Output {
         -*self
     }

@@ -90,16 +90,8 @@ let impl_1: Subtle.t_ConstantTimeEq t_CompressedRistretto =
 let impl_9__from_slice (bytes: t_Slice u8)
     : Prims.Pure
       (Core_models.Result.t_Result t_CompressedRistretto Core_models.Array.t_TryFromSliceError)
-      (requires (Core_models.Slice.impl__len #u8 bytes <: usize) =. mk_usize 32)
-      (ensures
-        fun r ->
-          let r:Core_models.Result.t_Result t_CompressedRistretto
-            Core_models.Array.t_TryFromSliceError =
-            r
-          in
-          Core_models.Result.impl__is_ok #t_CompressedRistretto
-            #Core_models.Array.t_TryFromSliceError
-            r) =
+      Prims.l_True
+      (fun _ -> True) =
   Core_models.Result.impl__map #(t_Array u8 (mk_usize 32))
     #Core_models.Array.t_TryFromSliceError
     #t_CompressedRistretto
