@@ -17,6 +17,8 @@ pub use traits::Identity;
 pub mod constants;
 
 /// A compressed Ristretto255 point.
+///
+/// This represents the canonical encoding of a Ristretto255 group element.
 #[derive(Copy, Clone, Eq, Hash)]
 pub struct CompressedRistretto(pub [u8; 32]);
 
@@ -159,9 +161,50 @@ mod decompress {
     }
 }
 
-// TODO: These might go away
-struct RistrettoPoint(pub EdwardsPoint);
+/// A `RistrettoPoint` is an element in the Ristretto255 group.
+#[derive(Copy, Clone)]
+pub struct RistrettoPoint(pub(crate) EdwardsPoint);
 
+impl RistrettoPoint {
+    /// Compress this point using the Ristretto encoding.
+    pub fn compress(&self) -> CompressedRistretto {
+        let mut X = self.0.X;
+        let mut Y = self.0.Y;
+        let Z = &self.0.Z;
+        let T = &self.0.T;
+
+        let u1 = &(Z + &Y) * &(Z - &Y);
+        let u2 = &X * &Y;
+        // Ignore return value since this is always square
+        let (_, invsqrt) = (&u1 * &u2.square()).invsqrt();
+        let i1 = &invsqrt * &u1;
+        let i2 = &invsqrt * &u2;
+        let z_inv = &i1 * &(&i2 * T);
+        let mut den_inv = i2;
+
+        let iX = &X * &constants::SQRT_M1;
+        let iY = &Y * &constants::SQRT_M1;
+        let ristretto_magic = &constants::INVSQRT_A_MINUS_D;
+        let enchanted_denominator = &i1 * ristretto_magic;
+
+        let rotate = (T * &z_inv).is_negative();
+
+        X.conditional_assign(&iY, rotate);
+        Y.conditional_assign(&iX, rotate);
+        den_inv.conditional_assign(&enchanted_denominator, rotate);
+
+        Y.conditional_negate((&X * &z_inv).is_negative());
+
+        let mut s = &den_inv * &(Z - &Y);
+        let s_is_negative = s.is_negative();
+        s.conditional_negate(s_is_negative);
+
+        CompressedRistretto(s.to_bytes())
+    }
+}
+
+// TODO: This might go away
+#[derive(Copy, Clone)]
 struct EdwardsPoint {
     X: FieldElement,
     Y: FieldElement,
@@ -172,6 +215,13 @@ struct EdwardsPoint {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn decompress_negative_s_fails() {
+        // constants::d is neg, so decompression should fail as |d| != d.
+        let bad_compressed = CompressedRistretto(constants::EDWARDS_D.to_bytes());
+        assert!(bad_compressed.decompress().is_none());
+    }
 
     #[test]
     fn upstream_small_multiples_decompress() {
