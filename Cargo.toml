@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "ristretto255",
+    "ristretto255-ka",
+]
+resolver = "2"
