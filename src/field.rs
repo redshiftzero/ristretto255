@@ -78,7 +78,16 @@ const LOW_51_BIT_MASK: u64 = 0x7FFFFFFFFFFFF_u64;
 
 #[hax_lib::attributes]
 impl FieldElement {
+    pub const ZERO: Self = Self([0, 0, 0, 0, 0]);
     pub const ONE: Self = Self([1, 0, 0, 0, 0]);
+    /// The scalar \\( -1 \\).
+    pub const MINUS_ONE: Self = Self([
+        2251799813685228,
+        2251799813685247,
+        2251799813685247,
+        2251799813685247,
+        2251799813685247,
+    ]);
 
     #[hax_lib::requires(fstar!("Rust_primitives.Integers.v i + 7 < 32"))]
     const fn load8_at(input: &[u8; 32], i: usize) -> u64 {

@@ -19,7 +19,7 @@ pub mod constants;
 /// A compressed Ristretto255 point.
 ///
 /// This represents the canonical encoding of a Ristretto255 group element.
-#[derive(Copy, Clone, Eq, Hash)]
+#[derive(Copy, Clone, Debug, Eq, Hash)]
 pub struct CompressedRistretto(pub [u8; 32]);
 
 #[hax_lib::attributes]
@@ -162,7 +162,7 @@ mod decompress {
 }
 
 /// A `RistrettoPoint` is an element in the Ristretto255 group.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Eq)]
 pub struct RistrettoPoint(pub(crate) EdwardsPoint);
 
 impl RistrettoPoint {
@@ -203,6 +203,41 @@ impl RistrettoPoint {
     }
 }
 
+impl Identity for RistrettoPoint {
+    fn identity() -> RistrettoPoint {
+        RistrettoPoint(EdwardsPoint::identity())
+    }
+}
+
+impl Default for RistrettoPoint {
+    fn default() -> RistrettoPoint {
+        RistrettoPoint::identity()
+    }
+}
+
+impl PartialEq for RistrettoPoint {
+    fn eq(&self, other: &RistrettoPoint) -> bool {
+        self.ct_eq(other).into()
+    }
+}
+
+impl ConstantTimeEq for RistrettoPoint {
+    /// Test equality between two `RistrettoPoint`s.
+    ///
+    /// # Returns
+    ///
+    /// * `Choice(1)` if the two `RistrettoPoint`s are equal;
+    /// * `Choice(0)` otherwise.
+    fn ct_eq(&self, other: &RistrettoPoint) -> Choice {
+        let X1Y2 = &self.0.X * &other.0.Y;
+        let Y1X2 = &self.0.Y * &other.0.X;
+        let X1X2 = &self.0.X * &other.0.X;
+        let Y1Y2 = &self.0.Y * &other.0.Y;
+
+        X1Y2.ct_eq(&Y1X2) | X1X2.ct_eq(&Y1Y2)
+    }
+}
+
 // TODO: This might go away
 #[derive(Copy, Clone)]
 struct EdwardsPoint {
@@ -211,6 +246,38 @@ struct EdwardsPoint {
     Z: FieldElement,
     T: FieldElement,
 }
+
+impl Identity for EdwardsPoint {
+    fn identity() -> EdwardsPoint {
+        EdwardsPoint {
+            X: FieldElement::ZERO,
+            Y: FieldElement::ONE,
+            Z: FieldElement::ONE,
+            T: FieldElement::ZERO,
+        }
+    }
+}
+
+impl ConstantTimeEq for EdwardsPoint {
+    fn ct_eq(&self, other: &EdwardsPoint) -> Choice {
+        // We would like to check that the point (X/Z, Y/Z) is equal to
+        // the point (X'/Z', Y'/Z') without converting into affine
+        // coordinates (x, y) and (x', y'), which requires two inversions.
+        // We have that X = xZ and X' = x'Z'. Thus, x = x' is equivalent to
+        // (xZ)Z' = (x'Z')Z, and similarly for the y-coordinate.
+
+        (&self.X * &other.Z).ct_eq(&(&other.X * &self.Z))
+            & (&self.Y * &other.Z).ct_eq(&(&other.Y * &self.Z))
+    }
+}
+
+impl PartialEq for EdwardsPoint {
+    fn eq(&self, other: &EdwardsPoint) -> bool {
+        self.ct_eq(other).into()
+    }
+}
+
+impl Eq for EdwardsPoint {}
 
 #[cfg(test)]
 mod tests {
@@ -298,5 +365,11 @@ mod tests {
         for point in compressed {
             assert!(point.decompress().is_some());
         }
+    }
+
+    #[test]
+    fn compress_id() {
+        let id = RistrettoPoint::identity();
+        assert_eq!(id.compress(), CompressedRistretto::identity());
     }
 }
