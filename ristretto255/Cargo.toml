@@ -8,10 +8,6 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/redshiftzero/ristretto255"
 readme = "README.md"
 
-[lib]
-name = "ristretto255"
-path = "src/lib.rs"
-
 [dependencies]
 # libcrux-curve25519 = "0.0.6"
 hax-lib = { git = "https://github.com/hacspec/hax", version = "0.3.6" }

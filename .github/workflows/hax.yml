@@ -20,8 +20,10 @@ jobs:
           hax_reference: hax-lib-v0.3.6 
 
       - name: 🏃 Extract F*
+        working-directory: ristretto255
         run: |
           rm -f proofs/fstar/extraction/*.fst*
           python3 hax.py extract
       - name: 🏃 Type-check extracted F*
+        working-directory: ristretto255
         run: python3 hax.py prove
