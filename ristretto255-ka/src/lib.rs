@@ -58,10 +58,7 @@ impl Secret {
     }
 
     /// Derive a public key for this secret key, using the provided `generator`.
-    pub fn public_with_generator(
-        &self,
-        generator: &ristretto255::RistrettoPoint,
-    ) -> Public {
+    pub fn public_with_generator(&self, generator: &ristretto255::RistrettoPoint) -> Public {
         Public((&self.0 * generator).compress().into())
     }
 
@@ -133,8 +130,7 @@ impl TryFrom<&[u8]> for Secret {
 impl TryFrom<[u8; 32]> for Secret {
     type Error = Error;
     fn try_from(bytes: [u8; 32]) -> Result<Secret, Error> {
-        let x =
-            ristretto255::Scalar::from_bytes_checked(&bytes).ok_or(Error::InvalidSecret)?;
+        let x = ristretto255::Scalar::from_bytes_checked(&bytes).ok_or(Error::InvalidSecret)?;
         Ok(Secret(x))
     }
 }
