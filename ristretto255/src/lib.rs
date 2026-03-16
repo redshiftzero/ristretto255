@@ -5,11 +5,15 @@
 
 // TODO Make no_std compatible.
 use std::array::TryFromSliceError;
+use std::ops::Mul;
 
 use subtle::{Choice, ConstantTimeEq};
 
 use field::FieldElement;
 mod field;
+
+mod scalar;
+pub use scalar::Scalar;
 
 mod traits;
 pub use traits::Identity;
@@ -200,6 +204,29 @@ impl RistrettoPoint {
         s.conditional_negate(s_is_negative);
 
         CompressedRistretto(s.to_bytes())
+    }
+}
+
+impl From<CompressedRistretto> for [u8; 32] {
+    fn from(c: CompressedRistretto) -> [u8; 32] {
+        c.0
+    }
+}
+
+impl RistrettoPoint {
+    /// Return the Ristretto255 basepoint.
+    pub fn basepoint() -> RistrettoPoint {
+        constants::RISTRETTO_BASEPOINT_COMPRESSED
+            .decompress()
+            .expect("hardcoded basepoint is valid")
+    }
+}
+
+impl Mul<&RistrettoPoint> for &Scalar {
+    type Output = RistrettoPoint;
+
+    fn mul(self, _rhs: &RistrettoPoint) -> RistrettoPoint {
+        unimplemented!()
     }
 }
 

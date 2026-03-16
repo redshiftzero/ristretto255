@@ -9,3 +9,7 @@ repository = "https://github.com/redshiftzero/ristretto255"
 
 [dependencies]
 ristretto255 = { path = "../ristretto255" }
+rand_core = "0.6"
+zeroize = { version = "1", features = ["derive"] }
+thiserror = "2"
+hex = "0.4"
