@@ -12,6 +12,9 @@ use subtle::{Choice, ConstantTimeEq};
 use field::FieldElement;
 mod field;
 
+mod backend;
+use backend::{CompletedPoint, EdwardsPoint};
+
 mod scalar;
 pub use scalar::Scalar;
 
@@ -215,6 +218,52 @@ impl RistrettoPoint {
     }
 }
 
+impl RistrettoPoint {
+       /// Computes the Ristretto Elligator map for the given field element. This is the second half of
+    /// the [`MAP`](https://www.rfc-editor.org/rfc/rfc9496.html#section-4.3.4-4) function defined in
+    /// the Ristretto spec.
+    ///
+    /// # Note
+    ///
+    /// This method is not public because it's just used for hashing
+    /// to a point -- proper elligator support is deferred for now.
+    pub(crate) fn elligator_ristretto_flavor(r_0: &FieldElement) -> RistrettoPoint {
+        let i = &constants::SQRT_M1;
+        let d = &constants::EDWARDS_D;
+        let one_minus_d_sq = &constants::ONE_MINUS_EDWARDS_D_SQUARED;
+        let d_minus_one_sq = &constants::EDWARDS_D_MINUS_ONE_SQUARED;
+        let mut c = constants::MINUS_ONE;
+
+        let one = FieldElement::ONE;
+
+        let r = i * &r_0.square();
+        let N_s = &(&r + &one) * one_minus_d_sq;
+        let D = &(&c - &(d * &r)) * &(&r + d);
+
+        let (Ns_D_is_sq, mut s) = FieldElement::sqrt_ratio_i(&N_s, &D);
+        let mut s_prime = &s * r_0;
+        let s_prime_is_pos = !s_prime.is_negative();
+        s_prime.conditional_negate(s_prime_is_pos);
+
+        s.conditional_assign(&s_prime, !Ns_D_is_sq);
+        c.conditional_assign(&r, !Ns_D_is_sq);
+
+        let N_t = &(&(&c * &(&r - &one)) * d_minus_one_sq) - &D;
+        let s_sq = s.square();
+
+        // The conversion from W_i is exactly the conversion from P1xP1.
+        RistrettoPoint(
+            CompletedPoint {
+                X: &(&s + &s) * &D,
+                Z: &N_t * &constants::SQRT_AD_MINUS_ONE,
+                Y: &FieldElement::ONE - &s_sq,
+                T: &FieldElement::ONE + &s_sq,
+            }
+            .as_extended(),
+        )
+    }
+}
+
 impl From<CompressedRistretto> for [u8; 32] {
     fn from(c: CompressedRistretto) -> [u8; 32] {
         c.0
@@ -281,47 +330,6 @@ impl ConstantTimeEq for RistrettoPoint {
         X1Y2.ct_eq(&Y1X2) | X1X2.ct_eq(&Y1Y2)
     }
 }
-
-// TODO: This might go away
-#[derive(Copy, Clone)]
-struct EdwardsPoint {
-    X: FieldElement,
-    Y: FieldElement,
-    Z: FieldElement,
-    T: FieldElement,
-}
-
-impl Identity for EdwardsPoint {
-    fn identity() -> EdwardsPoint {
-        EdwardsPoint {
-            X: FieldElement::ZERO,
-            Y: FieldElement::ONE,
-            Z: FieldElement::ONE,
-            T: FieldElement::ZERO,
-        }
-    }
-}
-
-impl ConstantTimeEq for EdwardsPoint {
-    fn ct_eq(&self, other: &EdwardsPoint) -> Choice {
-        // We would like to check that the point (X/Z, Y/Z) is equal to
-        // the point (X'/Z', Y'/Z') without converting into affine
-        // coordinates (x, y) and (x', y'), which requires two inversions.
-        // We have that X = xZ and X' = x'Z'. Thus, x = x' is equivalent to
-        // (xZ)Z' = (x'Z')Z, and similarly for the y-coordinate.
-
-        (&self.X * &other.Z).ct_eq(&(&other.X * &self.Z))
-            & (&self.Y * &other.Z).ct_eq(&(&other.Y * &self.Z))
-    }
-}
-
-impl PartialEq for EdwardsPoint {
-    fn eq(&self, other: &EdwardsPoint) -> bool {
-        self.ct_eq(other).into()
-    }
-}
-
-impl Eq for EdwardsPoint {}
 
 #[cfg(test)]
 mod tests {
