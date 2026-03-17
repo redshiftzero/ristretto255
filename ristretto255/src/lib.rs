@@ -5,7 +5,7 @@
 
 // TODO Make no_std compatible.
 use std::array::TryFromSliceError;
-use std::ops::Mul;
+use std::ops::{Add, Mul};
 
 use subtle::{Choice, ConstantTimeEq};
 
@@ -219,7 +219,7 @@ impl RistrettoPoint {
 }
 
 impl RistrettoPoint {
-       /// Computes the Ristretto Elligator map for the given field element. This is the second half of
+    /// Computes the Ristretto Elligator map for the given field element. This is the second half of
     /// the [`MAP`](https://www.rfc-editor.org/rfc/rfc9496.html#section-4.3.4-4) function defined in
     /// the Ristretto spec.
     ///
@@ -278,13 +278,33 @@ impl RistrettoPoint {
             .expect("hardcoded basepoint is valid")
     }
 
-    /// Construct a `RistrettoPoint` from 64 bytes of uniformly random data.
+    /// Construct a `RistrettoPoint` from 64 bytes of data.
     ///
-    /// This uses the ristretto255 map to produce a group element from a
-    /// 512-bit hash digest, ensuring the output is uniformly distributed
-    /// over the group.
-    pub fn from_uniform_bytes(_bytes: &[u8; 64]) -> RistrettoPoint {
-        unimplemented!()
+    /// If the input bytes are uniformly distributed, the resulting
+    /// point will be uniformly distributed over the group, and its
+    /// discrete log with respect to other points should be unknown.
+    ///
+    /// # Implementation
+    ///
+    /// This function splits the input array into two 32-byte halves,
+    /// takes the low 255 bits of each half mod p, applies the
+    /// Ristretto-flavored Elligator map to each, and adds the results.
+    pub fn from_uniform_bytes(bytes: &[u8; 64]) -> RistrettoPoint {
+        // This follows the one-way map construction from the Ristretto RFC:
+        // https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-ristretto255-decaf448-04#section-4.3.4
+        let mut r_1_bytes = [0u8; 32];
+        r_1_bytes.copy_from_slice(&bytes[0..32]);
+        let r_1 = FieldElement::from_bytes(&r_1_bytes);
+        let R_1 = RistrettoPoint::elligator_ristretto_flavor(&r_1);
+
+        let mut r_2_bytes = [0u8; 32];
+        r_2_bytes.copy_from_slice(&bytes[32..64]);
+        let r_2 = FieldElement::from_bytes(&r_2_bytes);
+        let R_2 = RistrettoPoint::elligator_ristretto_flavor(&r_2);
+
+        // Applying Elligator twice and adding the results ensures a
+        // uniform distribution.
+        R_1 + R_2
     }
 }
 
@@ -328,6 +348,22 @@ impl ConstantTimeEq for RistrettoPoint {
         let Y1Y2 = &self.0.Y * &other.0.Y;
 
         X1Y2.ct_eq(&Y1X2) | X1X2.ct_eq(&Y1Y2)
+    }
+}
+
+impl<'a, 'b> Add<&'b RistrettoPoint> for &'a RistrettoPoint {
+    type Output = RistrettoPoint;
+
+    fn add(self, other: &'b RistrettoPoint) -> RistrettoPoint {
+        RistrettoPoint((&self.0 + &other.0.as_projective_niels()).as_extended())
+    }
+}
+
+impl Add<RistrettoPoint> for RistrettoPoint {
+    type Output = RistrettoPoint;
+
+    fn add(self, other: RistrettoPoint) -> RistrettoPoint {
+        &self + &other
     }
 }
 

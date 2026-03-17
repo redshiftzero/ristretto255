@@ -32,7 +32,6 @@ pub(crate) const INVSQRT_A_MINUS_D: FieldElement = FieldElement([
     2118520810568447,
 ]);
 
-
 /// One minus edwards `d` value squared, equal to `(1 - (-121665/121666) mod p) pow 2`
 pub(crate) const ONE_MINUS_EDWARDS_D_SQUARED: FieldElement = FieldElement([
     1136626929484150,
@@ -67,6 +66,15 @@ pub(crate) const MINUS_ONE: FieldElement = FieldElement([
     2251799813685247,
     2251799813685247,
     2251799813685247,
+]);
+
+/// Edwards `2*d` value, equal to `2*(-121665/121666) mod p`.
+pub(crate) const EDWARDS_D2: FieldElement = FieldElement([
+    1859910466990425,
+    932731440258426,
+    1072319116312658,
+    1815898335770999,
+    633789495995903,
 ]);
 
 /// The compressed Ristretto255 basepoint (i.e. 1 * generator).
