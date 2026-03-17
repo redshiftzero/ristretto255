@@ -1,5 +1,6 @@
 #![deny(clippy::unwrap_used)]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+// Modeled after https://github.com/penumbra-zone/penumbra/tree/main/crates/crypto/decaf377-ka/src
 
 use std::convert::{TryFrom, TryInto};
 
@@ -149,5 +150,68 @@ impl TryFrom<[u8; 32]> for SharedSecret {
 impl From<&Secret> for [u8; 32] {
     fn from(s: &Secret) -> Self {
         s.0.to_bytes()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    fn scalar_strategy() -> BoxedStrategy<ristretto255::Scalar> {
+        any::<[u8; 32]>()
+            .prop_map(|bytes| ristretto255::Scalar::from_bytes_mod_order(&bytes))
+            .boxed()
+    }
+
+    fn point_strategy() -> BoxedStrategy<ristretto255::RistrettoPoint> {
+        any::<[u8; 64]>()
+            .prop_map(|bytes| ristretto255::RistrettoPoint::from_uniform_bytes(&bytes))
+            .boxed()
+    }
+
+    proptest! {
+        #[test]
+        fn key_agreement_works(
+            alice_sk in scalar_strategy(),
+            bob_sk in scalar_strategy(),
+        ) {
+            let alice_sk = Secret::new_from_field(alice_sk);
+            let bob_sk = Secret::new_from_field(bob_sk);
+
+            let alice_pk = alice_sk.public();
+            let bob_pk = bob_sk.public();
+
+            let alice_ss = alice_sk.key_agreement_with(&bob_pk).expect("alice key agreement");
+            let bob_ss = bob_sk.key_agreement_with(&alice_pk).expect("bob key agreement");
+
+            prop_assert_eq!(alice_ss, bob_ss);
+        }
+
+        #[test]
+        fn key_agreement_with_generator_works(
+            alice_sk in scalar_strategy(),
+            bob_sk in scalar_strategy(),
+            gen1 in point_strategy(),
+            gen2 in point_strategy(),
+        ) {
+            let alice_sk = Secret::new_from_field(alice_sk);
+            let bob_sk = Secret::new_from_field(bob_sk);
+
+            let alice_pk1 = alice_sk.public_with_generator(&gen1);
+            let alice_pk2 = alice_sk.public_with_generator(&gen2);
+
+            let bob_pk1 = bob_sk.public_with_generator(&gen1);
+            let bob_pk2 = bob_sk.public_with_generator(&gen2);
+
+            let bob_ss1 = bob_sk.key_agreement_with(&alice_pk1).expect("bob ka gen1");
+            let bob_ss2 = bob_sk.key_agreement_with(&alice_pk2).expect("bob ka gen2");
+
+            let alice_ss1 = alice_sk.key_agreement_with(&bob_pk1).expect("alice ka gen1");
+            let alice_ss2 = alice_sk.key_agreement_with(&bob_pk2).expect("alice ka gen2");
+
+            prop_assert_eq!(alice_ss1, bob_ss1);
+            prop_assert_eq!(alice_ss2, bob_ss2);
+        }
     }
 }

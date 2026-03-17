@@ -169,6 +169,14 @@ mod decompress {
 #[derive(Copy, Clone, Eq)]
 pub struct RistrettoPoint(pub(crate) EdwardsPoint);
 
+impl std::fmt::Debug for RistrettoPoint {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("RistrettoPoint")
+            .field(&self.compress())
+            .finish()
+    }
+}
+
 impl RistrettoPoint {
     /// Compress this point using the Ristretto encoding.
     pub fn compress(&self) -> CompressedRistretto {
@@ -219,6 +227,15 @@ impl RistrettoPoint {
         constants::RISTRETTO_BASEPOINT_COMPRESSED
             .decompress()
             .expect("hardcoded basepoint is valid")
+    }
+
+    /// Construct a `RistrettoPoint` from 64 bytes of uniformly random data.
+    ///
+    /// This uses the ristretto255 map to produce a group element from a
+    /// 512-bit hash digest, ensuring the output is uniformly distributed
+    /// over the group.
+    pub fn from_uniform_bytes(_bytes: &[u8; 64]) -> RistrettoPoint {
+        unimplemented!()
     }
 }
 
