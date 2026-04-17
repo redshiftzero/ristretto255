@@ -59,3 +59,13 @@ let impl_bitor_choice : Core_models.Ops.Bit.t_BitOr t_Choice t_Choice =
     f_bitor_post  = (fun (_: t_Choice) (_: t_Choice) (_: t_Choice) -> true);
     f_bitor       = fun (x: t_Choice) (y: t_Choice) -> Choice (x._0 |. y._0)
   }
+
+/// `BitAnd` instance for `Choice` (bitwise AND of the underlying bytes).
+[@@ FStar.Tactics.Typeclasses.tcinstance]
+let impl_bitand_choice : Core_models.Ops.Bit.t_BitAnd t_Choice t_Choice =
+  {
+    f_Output      = t_Choice;
+    f_bitand_pre  = (fun (_: t_Choice) (_: t_Choice) -> true);
+    f_bitand_post = (fun (_: t_Choice) (_: t_Choice) (_: t_Choice) -> true);
+    f_bitand      = fun (x: t_Choice) (y: t_Choice) -> Choice (x._0 &. y._0)
+  }
