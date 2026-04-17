@@ -26,6 +26,14 @@ let impl_ct_eq_slice_u8 : t_ConstantTimeEq (t_Slice u8) = {
   f_ct_eq = magic ()
 }
 
+/// Constant-time equality for u8.
+[@@ FStar.Tactics.Typeclasses.tcinstance]
+let impl_ct_eq_u8 : t_ConstantTimeEq u8 = {
+  f_ct_eq_pre  = (fun _ _ -> True);
+  f_ct_eq_post = (fun _ _ _ -> True);
+  f_ct_eq = fun (a: u8) (b: u8) -> Choice (if a = b then mk_u8 1 else mk_u8 0)
+}
+
 /// `From<u8>` for `Choice`.
 [@@ FStar.Tactics.Typeclasses.tcinstance]
 let impl_from_u8 : Core_models.Convert.t_From t_Choice u8 =
