@@ -3,6 +3,6 @@ module Ristretto255.Decompress
 open FStar.Mul
 open Core_models
 
-include Ristretto255.Bundle_decompress {step_1_ as step_1_}
+include Ristretto255.Bundle {step_1_ as step_1_}
 
-include Ristretto255.Bundle_decompress {step_2_ as step_2_}
+include Ristretto255.Bundle {step_2_ as step_2_}

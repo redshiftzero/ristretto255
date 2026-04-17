@@ -7,33 +7,37 @@ include Ristretto255.Bundle {t_FieldElement as t_FieldElement}
 
 include Ristretto255.Bundle {FieldElement as FieldElement}
 
-include Ristretto255.Bundle {impl_1 as impl_1}
+include Ristretto255.Bundle {impl_1__from__field as impl_1}
 
-include Ristretto255.Bundle {impl_2 as impl_2}
+include Ristretto255.Bundle {impl_2__from__field as impl_2}
 
-include Ristretto255.Bundle {impl_3 as impl_3}
+include Ristretto255.Bundle {impl_3__from__field as impl_3}
 
-include Ristretto255.Bundle {impl_4 as impl_4}
+include Ristretto255.Bundle {impl_4__from__field as impl_4}
 
 include Ristretto255.Bundle {impl_5 as impl_5}
 
-include Ristretto255.Bundle {impl_6 as impl_6}
+include Ristretto255.Bundle {impl_6__from__field as impl_6}
 
-include Ristretto255.Bundle {impl as impl}
+include Ristretto255.Bundle {impl__from__field as impl}
 
-include Ristretto255.Bundle {impl_7 as impl_7}
+include Ristretto255.Bundle {impl_7__from__field as impl_7}
 
-include Ristretto255.Bundle {impl_8 as impl_8}
+include Ristretto255.Bundle {impl_8__from__field as impl_8}
 
-include Ristretto255.Bundle {impl_9 as impl_9}
+include Ristretto255.Bundle {impl_9__from__field as impl_9}
 
-include Ristretto255.Bundle {impl_10 as impl_10}
+include Ristretto255.Bundle {impl_10__from__field as impl_10}
 
-include Ristretto255.Bundle {impl_11 as impl_11}
+include Ristretto255.Bundle {impl_11__from__field as impl_11}
 
 include Ristretto255.Bundle {v_LOW_51_BIT_MASK as v_LOW_51_BIT_MASK}
 
+include Ristretto255.Bundle {impl_12__ZERO as impl_FieldElement__ZERO}
+
 include Ristretto255.Bundle {impl_12__ONE as impl_FieldElement__ONE}
+
+include Ristretto255.Bundle {impl_12__MINUS_ONE as impl_FieldElement__MINUS_ONE}
 
 include Ristretto255.Bundle {impl_12__load8_at as impl_FieldElement__load8_at}
 
@@ -57,12 +61,12 @@ include Ristretto255.Bundle {impl_12__sqrt_ratio_i as impl_FieldElement__sqrt_ra
 
 include Ristretto255.Bundle {impl_12__pow_p58 as impl_FieldElement__pow_p58}
 
-include Ristretto255.Bundle {impl_13 as impl_13}
+include Ristretto255.Bundle {impl_13__from__field as impl_13}
 
-include Ristretto255.Bundle {impl_14 as impl_14}
+include Ristretto255.Bundle {impl_14__from__field as impl_14}
 
-include Ristretto255.Bundle {impl_15 as impl_15}
+include Ristretto255.Bundle {impl_15__from__field as impl_15}
 
-include Ristretto255.Bundle {impl_16 as impl_16}
+include Ristretto255.Bundle {impl_16__from__field as impl_16}
 
-include Ristretto255.Bundle {impl_17 as impl_17}
+include Ristretto255.Bundle {impl_17__from__field as impl_17}
