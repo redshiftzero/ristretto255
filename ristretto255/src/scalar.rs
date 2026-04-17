@@ -15,6 +15,7 @@ pub struct Scalar([u8; 32]);
 
 impl Scalar {
     /// Generate a random scalar using the provided RNG.
+    #[hax_lib::opaque]
     pub fn random<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
         let mut bytes = [0u8; 64];
         rng.fill_bytes(&mut bytes);
@@ -82,6 +83,7 @@ fn m(x: u64, y: u64) -> u128 {
 impl Scalar52 {
     const ZERO: Scalar52 = Scalar52([0, 0, 0, 0, 0]);
 
+    #[hax_lib::opaque]
     #[rustfmt::skip]
     fn from_bytes(bytes: &[u8; 32]) -> Scalar52 {
         let mut words = [0u64; 4];
@@ -103,6 +105,7 @@ impl Scalar52 {
         ])
     }
 
+    #[hax_lib::opaque]
     #[rustfmt::skip]
     fn from_bytes_wide(bytes: &[u8; 64]) -> Scalar52 {
         let mut words = [0u64; 8];
@@ -135,6 +138,7 @@ impl Scalar52 {
         Scalar52::add(&hi, &lo)
     }
 
+    #[hax_lib::opaque]
     #[rustfmt::skip]
     #[allow(clippy::identity_op)]
     fn to_bytes(self) -> [u8; 32] {
@@ -176,6 +180,7 @@ impl Scalar52 {
         s
     }
 
+    #[hax_lib::opaque]
     fn add(a: &Scalar52, b: &Scalar52) -> Scalar52 {
         let mut sum = Scalar52::ZERO;
         let mask = (1u64 << 52) - 1;
@@ -190,6 +195,7 @@ impl Scalar52 {
         Scalar52::sub(&sum, &L)
     }
 
+    #[hax_lib::opaque]
     fn sub(a: &Scalar52, b: &Scalar52) -> Scalar52 {
         let mut difference = Scalar52::ZERO;
         let mask = (1u64 << 52) - 1;
@@ -211,6 +217,7 @@ impl Scalar52 {
         difference
     }
 
+    #[hax_lib::opaque]
     #[inline(always)]
     #[rustfmt::skip]
     fn mul_internal(a: &Scalar52, b: &Scalar52) -> [u128; 9] {
@@ -229,6 +236,7 @@ impl Scalar52 {
         ]
     }
 
+    #[hax_lib::opaque]
     #[inline(always)]
     #[rustfmt::skip]
     fn montgomery_reduce(limbs: &[u128; 9]) -> Scalar52 {
@@ -262,6 +270,7 @@ impl Scalar52 {
         Scalar52::sub(&Scalar52([r0, r1, r2, r3, r4]), &L)
     }
 
+    #[hax_lib::opaque]
     fn montgomery_mul(a: &Scalar52, b: &Scalar52) -> Scalar52 {
         Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b))
     }

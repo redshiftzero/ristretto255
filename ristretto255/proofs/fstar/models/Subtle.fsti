@@ -69,3 +69,25 @@ let impl_bitand_choice : Core_models.Ops.Bit.t_BitAnd t_Choice t_Choice =
     f_bitand_post = (fun (_: t_Choice) (_: t_Choice) (_: t_Choice) -> true);
     f_bitand      = fun (x: t_Choice) (y: t_Choice) -> Choice (x._0 &. y._0)
   }
+
+/// Typeclass for constant-time selection between two values.
+/// Models `subtle::ConditionallySelectable`.
+class t_ConditionallySelectable (v_Self: Type0) = {
+  f_conditional_select_pre  : v_Self -> v_Self -> t_Choice -> Type0;
+  f_conditional_select_post : v_Self -> v_Self -> t_Choice -> v_Self -> Type0;
+  f_conditional_select : x0:v_Self -> x1:v_Self -> x2:t_Choice
+    -> Prims.Pure v_Self
+        (f_conditional_select_pre x0 x1 x2)
+        (fun result -> f_conditional_select_post x0 x1 x2 result)
+}
+
+/// `ConditionallySelectable` for `u64`: return `b` if `choice.0 != 0`, else `a`.
+[@@ FStar.Tactics.Typeclasses.tcinstance]
+let impl_conditional_select_u64 : t_ConditionallySelectable u64 =
+  {
+    f_conditional_select_pre  = (fun _ _ _ -> True);
+    f_conditional_select_post = (fun _ _ _ _ -> True);
+    f_conditional_select      =
+      fun (a: u64) (b: u64) (choice: t_Choice) ->
+        if choice._0 <> mk_u8 0 then b else a
+  }
