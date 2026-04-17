@@ -273,6 +273,7 @@ impl From<CompressedRistretto> for [u8; 32] {
 
 impl RistrettoPoint {
     /// Return the Ristretto255 basepoint.
+    #[hax_lib::opaque]
     pub fn basepoint() -> RistrettoPoint {
         constants::RISTRETTO_BASEPOINT_COMPRESSED
             .decompress()

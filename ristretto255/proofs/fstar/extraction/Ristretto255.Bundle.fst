@@ -199,6 +199,13 @@ val impl_21': Core_models.Marker.t_Copy t_RistrettoPoint
 unfold
 let impl_21 = impl_21'
 
+/// Return the Ristretto255 basepoint.
+assume
+val impl_5__basepoint': Prims.unit -> t_RistrettoPoint
+
+unfold
+let impl_5__basepoint = impl_5__basepoint'
+
 let impl_8__from__backend: Core_models.Clone.t_Clone t_EdwardsPoint =
   { f_clone = (fun x -> x); f_clone_pre = (fun _ -> True); f_clone_post = (fun _ _ -> True) }
 
@@ -1819,11 +1826,3 @@ let impl_19__decompress (self: t_CompressedRistretto) : Core_models.Option.t_Opt
           Subtle.t_Choice)
     then Core_models.Option.Option_None <: Core_models.Option.t_Option t_RistrettoPoint
     else Core_models.Option.Option_Some res <: Core_models.Option.t_Option t_RistrettoPoint
-
-/// Return the Ristretto255 basepoint.
-let impl_5__basepoint (_: Prims.unit) : t_RistrettoPoint =
-  Core_models.Option.impl__expect #t_RistrettoPoint
-    (impl_19__decompress v_RISTRETTO_BASEPOINT_COMPRESSED
-      <:
-      Core_models.Option.t_Option t_RistrettoPoint)
-    "hardcoded basepoint is valid"
