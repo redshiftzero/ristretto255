@@ -172,6 +172,7 @@ mod decompress {
 #[derive(Copy, Clone, Eq)]
 pub struct RistrettoPoint(pub(crate) EdwardsPoint);
 
+#[hax_lib::exclude]
 impl std::fmt::Debug for RistrettoPoint {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_tuple("RistrettoPoint")
@@ -308,6 +309,7 @@ impl RistrettoPoint {
     }
 }
 
+#[hax_lib::exclude]
 impl Mul<&RistrettoPoint> for &Scalar {
     type Output = RistrettoPoint;
 
