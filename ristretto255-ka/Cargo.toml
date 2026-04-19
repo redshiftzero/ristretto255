@@ -1,0 +1,18 @@
+[package]
+name = "ristretto255-ka"
+version = "0.1.0"
+edition = "2021"
+authors = ["redshiftzero <jen@relicveil.com>"]
+description = "Key agreement using ristretto255"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/redshiftzero/ristretto255"
+
+[dependencies]
+ristretto255 = { path = "../ristretto255" }
+rand_core = "0.6"
+zeroize = { version = "1", features = ["derive"] }
+thiserror = "2"
+hex = "0.4"
+
+[dev-dependencies]
+proptest = "1"

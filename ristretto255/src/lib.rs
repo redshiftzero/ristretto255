@@ -5,11 +5,18 @@
 
 // TODO Make no_std compatible.
 use std::array::TryFromSliceError;
+use std::ops::{Add, Mul};
 
 use subtle::{Choice, ConstantTimeEq};
 
 use field::FieldElement;
 mod field;
+
+mod backend;
+use backend::{CompletedPoint, EdwardsPoint};
+
+mod scalar;
+pub use scalar::Scalar;
 
 mod traits;
 pub use traits::Identity;
@@ -165,6 +172,15 @@ mod decompress {
 #[derive(Copy, Clone, Eq)]
 pub struct RistrettoPoint(pub(crate) EdwardsPoint);
 
+#[hax_lib::exclude]
+impl std::fmt::Debug for RistrettoPoint {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("RistrettoPoint")
+            .field(&self.compress())
+            .finish()
+    }
+}
+
 impl RistrettoPoint {
     /// Compress this point using the Ristretto encoding.
     pub fn compress(&self) -> CompressedRistretto {
@@ -203,6 +219,122 @@ impl RistrettoPoint {
     }
 }
 
+impl RistrettoPoint {
+    /// Computes the Ristretto Elligator map for the given field element. This is the second half of
+    /// the [`MAP`](https://www.rfc-editor.org/rfc/rfc9496.html#section-4.3.4-4) function defined in
+    /// the Ristretto spec.
+    ///
+    /// # Note
+    ///
+    /// This method is not public because it's just used for hashing
+    /// to a point -- proper elligator support is deferred for now.
+    pub(crate) fn elligator_ristretto_flavor(r_0: &FieldElement) -> RistrettoPoint {
+        let i = &constants::SQRT_M1;
+        let d = &constants::EDWARDS_D;
+        let one_minus_d_sq = &constants::ONE_MINUS_EDWARDS_D_SQUARED;
+        let d_minus_one_sq = &constants::EDWARDS_D_MINUS_ONE_SQUARED;
+        let mut c = constants::MINUS_ONE;
+
+        let one = FieldElement::ONE;
+
+        let r = i * &r_0.square();
+        let N_s = &(&r + &one) * one_minus_d_sq;
+        let D = &(&c - &(d * &r)) * &(&r + d);
+
+        let (Ns_D_is_sq, mut s) = FieldElement::sqrt_ratio_i(&N_s, &D);
+        let mut s_prime = &s * r_0;
+        let s_prime_is_pos = !s_prime.is_negative();
+        s_prime.conditional_negate(s_prime_is_pos);
+
+        s.conditional_assign(&s_prime, !Ns_D_is_sq);
+        c.conditional_assign(&r, !Ns_D_is_sq);
+
+        let N_t = &(&(&c * &(&r - &one)) * d_minus_one_sq) - &D;
+        let s_sq = s.square();
+
+        // The conversion from W_i is exactly the conversion from P1xP1.
+        RistrettoPoint(
+            CompletedPoint {
+                X: &(&s + &s) * &D,
+                Z: &N_t * &constants::SQRT_AD_MINUS_ONE,
+                Y: &FieldElement::ONE - &s_sq,
+                T: &FieldElement::ONE + &s_sq,
+            }
+            .as_extended(),
+        )
+    }
+}
+
+impl From<CompressedRistretto> for [u8; 32] {
+    fn from(c: CompressedRistretto) -> [u8; 32] {
+        c.0
+    }
+}
+
+impl RistrettoPoint {
+    /// Return the Ristretto255 basepoint.
+    #[hax_lib::opaque]
+    pub fn basepoint() -> RistrettoPoint {
+        constants::RISTRETTO_BASEPOINT_COMPRESSED
+            .decompress()
+            .expect("hardcoded basepoint is valid")
+    }
+
+    /// Construct a `RistrettoPoint` from 64 bytes of data.
+    ///
+    /// If the input bytes are uniformly distributed, the resulting
+    /// point will be uniformly distributed over the group, and its
+    /// discrete log with respect to other points should be unknown.
+    ///
+    /// # Implementation
+    ///
+    /// This function splits the input array into two 32-byte halves,
+    /// takes the low 255 bits of each half mod p, applies the
+    /// Ristretto-flavored Elligator map to each, and adds the results.
+    pub fn from_uniform_bytes(bytes: &[u8; 64]) -> RistrettoPoint {
+        // This follows the one-way map construction from the Ristretto RFC:
+        // https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-ristretto255-decaf448-04#section-4.3.4
+        let mut r_1_bytes = [0u8; 32];
+        r_1_bytes.copy_from_slice(&bytes[0..32]);
+        let r_1 = FieldElement::from_bytes(&r_1_bytes);
+        let R_1 = RistrettoPoint::elligator_ristretto_flavor(&r_1);
+
+        let mut r_2_bytes = [0u8; 32];
+        r_2_bytes.copy_from_slice(&bytes[32..64]);
+        let r_2 = FieldElement::from_bytes(&r_2_bytes);
+        let R_2 = RistrettoPoint::elligator_ristretto_flavor(&r_2);
+
+        // Applying Elligator twice and adding the results ensures a
+        // uniform distribution.
+        R_1 + R_2
+    }
+}
+
+#[hax_lib::exclude]
+impl Mul<&RistrettoPoint> for &Scalar {
+    type Output = RistrettoPoint;
+
+    /// Compute `[self] rhs` via a constant-time double-and-add over the bits
+    /// of the scalar (MSB first).
+    fn mul(self, rhs: &RistrettoPoint) -> RistrettoPoint {
+        let scalar_bytes = self.to_bytes();
+        let mut result = EdwardsPoint::identity();
+        for i in (0..32).rev() {
+            let byte = scalar_bytes[i];
+            for j in (0..8).rev() {
+                result = result.double();
+                let added = (&result + &rhs.0.as_projective_niels()).as_extended();
+                let bit = Choice::from((byte >> j) & 1);
+                result.X.conditional_assign(&added.X, bit);
+                result.Y.conditional_assign(&added.Y, bit);
+                result.Z.conditional_assign(&added.Z, bit);
+                result.T.conditional_assign(&added.T, bit);
+            }
+        }
+        RistrettoPoint(result)
+    }
+}
+
 impl Identity for RistrettoPoint {
     fn identity() -> RistrettoPoint {
         RistrettoPoint(EdwardsPoint::identity())
@@ -238,46 +370,21 @@ impl ConstantTimeEq for RistrettoPoint {
     }
 }
 
-// TODO: This might go away
-#[derive(Copy, Clone)]
-struct EdwardsPoint {
-    X: FieldElement,
-    Y: FieldElement,
-    Z: FieldElement,
-    T: FieldElement,
-}
+impl<'a, 'b> Add<&'b RistrettoPoint> for &'a RistrettoPoint {
+    type Output = RistrettoPoint;
 
-impl Identity for EdwardsPoint {
-    fn identity() -> EdwardsPoint {
-        EdwardsPoint {
-            X: FieldElement::ZERO,
-            Y: FieldElement::ONE,
-            Z: FieldElement::ONE,
-            T: FieldElement::ZERO,
-        }
+    fn add(self, other: &'b RistrettoPoint) -> RistrettoPoint {
+        RistrettoPoint((&self.0 + &other.0.as_projective_niels()).as_extended())
     }
 }
 
-impl ConstantTimeEq for EdwardsPoint {
-    fn ct_eq(&self, other: &EdwardsPoint) -> Choice {
-        // We would like to check that the point (X/Z, Y/Z) is equal to
-        // the point (X'/Z', Y'/Z') without converting into affine
-        // coordinates (x, y) and (x', y'), which requires two inversions.
-        // We have that X = xZ and X' = x'Z'. Thus, x = x' is equivalent to
-        // (xZ)Z' = (x'Z')Z, and similarly for the y-coordinate.
+impl Add<RistrettoPoint> for RistrettoPoint {
+    type Output = RistrettoPoint;
 
-        (&self.X * &other.Z).ct_eq(&(&other.X * &self.Z))
-            & (&self.Y * &other.Z).ct_eq(&(&other.Y * &self.Z))
+    fn add(self, other: RistrettoPoint) -> RistrettoPoint {
+        &self + &other
     }
 }
-
-impl PartialEq for EdwardsPoint {
-    fn eq(&self, other: &EdwardsPoint) -> bool {
-        self.ct_eq(other).into()
-    }
-}
-
-impl Eq for EdwardsPoint {}
 
 #[cfg(test)]
 mod tests {
@@ -371,5 +478,23 @@ mod tests {
     fn compress_id() {
         let id = RistrettoPoint::identity();
         assert_eq!(id.compress(), CompressedRistretto::identity());
+    }
+
+    #[test]
+    fn scalar_mul_identities() {
+        let bp = RistrettoPoint::basepoint();
+
+        // 0 * bp = identity
+        let zero = Scalar::from_bytes_mod_order(&[0u8; 32]);
+        assert_eq!(
+            (&zero * &bp).compress(),
+            RistrettoPoint::identity().compress()
+        );
+
+        // 1 * bp = bp
+        let mut one_bytes = [0u8; 32];
+        one_bytes[0] = 1;
+        let one = Scalar::from_bytes_mod_order(&one_bytes);
+        assert_eq!((&one * &bp).compress(), bp.compress());
     }
 }

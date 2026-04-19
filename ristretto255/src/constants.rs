@@ -1,7 +1,9 @@
 /// This module contains the constants for the Ristretto255 group, taken
 /// from `curve25519-dalek` crate, but using the `FieldElement` type from this crate,
 /// which internally uses verified Rust code, generated from the HACL* project.
-use crate::{EdwardsPoint, FieldElement};
+#[cfg(test)]
+use crate::backend::EdwardsPoint;
+use crate::{CompressedRistretto, FieldElement};
 
 /// Edwards `d` value, equal to `-121665/121666 mod p`.
 pub(crate) const EDWARDS_D: FieldElement = FieldElement([
@@ -28,6 +30,57 @@ pub(crate) const INVSQRT_A_MINUS_D: FieldElement = FieldElement([
     8113234426968,
     1777959178193151,
     2118520810568447,
+]);
+
+/// One minus edwards `d` value squared, equal to `(1 - (-121665/121666) mod p) pow 2`
+pub(crate) const ONE_MINUS_EDWARDS_D_SQUARED: FieldElement = FieldElement([
+    1136626929484150,
+    1998550399581263,
+    496427632559748,
+    118527312129759,
+    45110755273534,
+]);
+
+/// Edwards `d` value minus one squared, equal to `(((-121665/121666) mod p) - 1) pow 2`
+pub(crate) const EDWARDS_D_MINUS_ONE_SQUARED: FieldElement = FieldElement([
+    1507062230895904,
+    1572317787530805,
+    683053064812840,
+    317374165784489,
+    1572899562415810,
+]);
+
+/// `= sqrt(a*d - 1)`, where `a = -1 (mod p)`, `d` are the Edwards curve parameters.
+pub(crate) const SQRT_AD_MINUS_ONE: FieldElement = FieldElement([
+    2241493124984347,
+    425987919032274,
+    2207028919301688,
+    1220490630685848,
+    974799131293748,
+]);
+
+/// The value of minus one, equal to `-&FieldElement::ONE`
+pub(crate) const MINUS_ONE: FieldElement = FieldElement([
+    2251799813685228,
+    2251799813685247,
+    2251799813685247,
+    2251799813685247,
+    2251799813685247,
+]);
+
+/// Edwards `2*d` value, equal to `2*(-121665/121666) mod p`.
+pub(crate) const EDWARDS_D2: FieldElement = FieldElement([
+    1859910466990425,
+    932731440258426,
+    1072319116312658,
+    1815898335770999,
+    633789495995903,
+]);
+
+/// The compressed Ristretto255 basepoint (i.e. 1 * generator).
+pub const RISTRETTO_BASEPOINT_COMPRESSED: CompressedRistretto = CompressedRistretto([
+    226, 242, 174, 10, 106, 188, 78, 113, 168, 132, 169, 97, 197, 0, 81, 95, 88, 227, 11, 106, 165,
+    130, 221, 141, 182, 166, 89, 69, 224, 141, 45, 118,
 ]);
 
 /// The 8-torsion subgroup \\(\mathcal E \[8\]\\).
