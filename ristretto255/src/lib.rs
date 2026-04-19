@@ -314,8 +314,24 @@ impl RistrettoPoint {
 impl Mul<&RistrettoPoint> for &Scalar {
     type Output = RistrettoPoint;
 
-    fn mul(self, _rhs: &RistrettoPoint) -> RistrettoPoint {
-        unimplemented!()
+    /// Compute `[self] rhs` via a constant-time double-and-add over the bits
+    /// of the scalar (MSB first).
+    fn mul(self, rhs: &RistrettoPoint) -> RistrettoPoint {
+        let scalar_bytes = self.to_bytes();
+        let mut result = EdwardsPoint::identity();
+        for i in (0..32).rev() {
+            let byte = scalar_bytes[i];
+            for j in (0..8).rev() {
+                result = result.double();
+                let added = (&result + &rhs.0.as_projective_niels()).as_extended();
+                let bit = Choice::from((byte >> j) & 1);
+                result.X.conditional_assign(&added.X, bit);
+                result.Y.conditional_assign(&added.Y, bit);
+                result.Z.conditional_assign(&added.Z, bit);
+                result.T.conditional_assign(&added.T, bit);
+            }
+        }
+        RistrettoPoint(result)
     }
 }
 
@@ -462,5 +478,23 @@ mod tests {
     fn compress_id() {
         let id = RistrettoPoint::identity();
         assert_eq!(id.compress(), CompressedRistretto::identity());
+    }
+
+    #[test]
+    fn scalar_mul_identities() {
+        let bp = RistrettoPoint::basepoint();
+
+        // 0 * bp = identity
+        let zero = Scalar::from_bytes_mod_order(&[0u8; 32]);
+        assert_eq!(
+            (&zero * &bp).compress(),
+            RistrettoPoint::identity().compress()
+        );
+
+        // 1 * bp = bp
+        let mut one_bytes = [0u8; 32];
+        one_bytes[0] = 1;
+        let one = Scalar::from_bytes_mod_order(&one_bytes);
+        assert_eq!((&one * &bp).compress(), bp.compress());
     }
 }

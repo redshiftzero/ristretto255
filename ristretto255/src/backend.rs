@@ -100,6 +100,13 @@ impl CompletedPoint {
     }
 }
 
+impl EdwardsPoint {
+    /// Double this point. (for perf we should not go through the projective)
+    pub(crate) fn double(&self) -> EdwardsPoint {
+        (self + &self.as_projective_niels()).as_extended()
+    }
+}
+
 /// A pre-computed point on the \\( \mathbb P\^3 \\) model for the
 /// curve, represented as \\((Y+X, Y-X, Z, 2dXY)\\) in "Niels coordinates".
 #[derive(Copy, Clone)]
