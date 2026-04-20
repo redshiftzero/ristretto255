@@ -26,6 +26,14 @@ let impl_ct_eq_slice_u8 : t_ConstantTimeEq (t_Slice u8) = {
   f_ct_eq = magic ()
 }
 
+/// Constant-time equality for u8.
+[@@ FStar.Tactics.Typeclasses.tcinstance]
+let impl_ct_eq_u8 : t_ConstantTimeEq u8 = {
+  f_ct_eq_pre  = (fun _ _ -> True);
+  f_ct_eq_post = (fun _ _ _ -> True);
+  f_ct_eq = fun (a: u8) (b: u8) -> Choice (if a = b then mk_u8 1 else mk_u8 0)
+}
+
 /// `From<u8>` for `Choice`.
 [@@ FStar.Tactics.Typeclasses.tcinstance]
 let impl_from_u8 : Core_models.Convert.t_From t_Choice u8 =
@@ -58,4 +66,36 @@ let impl_bitor_choice : Core_models.Ops.Bit.t_BitOr t_Choice t_Choice =
     f_bitor_pre   = (fun (_: t_Choice) (_: t_Choice) -> true);
     f_bitor_post  = (fun (_: t_Choice) (_: t_Choice) (_: t_Choice) -> true);
     f_bitor       = fun (x: t_Choice) (y: t_Choice) -> Choice (x._0 |. y._0)
+  }
+
+/// `BitAnd` instance for `Choice` (bitwise AND of the underlying bytes).
+[@@ FStar.Tactics.Typeclasses.tcinstance]
+let impl_bitand_choice : Core_models.Ops.Bit.t_BitAnd t_Choice t_Choice =
+  {
+    f_Output      = t_Choice;
+    f_bitand_pre  = (fun (_: t_Choice) (_: t_Choice) -> true);
+    f_bitand_post = (fun (_: t_Choice) (_: t_Choice) (_: t_Choice) -> true);
+    f_bitand      = fun (x: t_Choice) (y: t_Choice) -> Choice (x._0 &. y._0)
+  }
+
+/// Typeclass for constant-time selection between two values.
+/// Models `subtle::ConditionallySelectable`.
+class t_ConditionallySelectable (v_Self: Type0) = {
+  f_conditional_select_pre  : v_Self -> v_Self -> t_Choice -> Type0;
+  f_conditional_select_post : v_Self -> v_Self -> t_Choice -> v_Self -> Type0;
+  f_conditional_select : x0:v_Self -> x1:v_Self -> x2:t_Choice
+    -> Prims.Pure v_Self
+        (f_conditional_select_pre x0 x1 x2)
+        (fun result -> f_conditional_select_post x0 x1 x2 result)
+}
+
+/// `ConditionallySelectable` for `u64`: return `b` if `choice.0 != 0`, else `a`.
+[@@ FStar.Tactics.Typeclasses.tcinstance]
+let impl_conditional_select_u64 : t_ConditionallySelectable u64 =
+  {
+    f_conditional_select_pre  = (fun _ _ _ -> True);
+    f_conditional_select_post = (fun _ _ _ _ -> True);
+    f_conditional_select      =
+      fun (a: u64) (b: u64) (choice: t_Choice) ->
+        if choice._0 <> mk_u8 0 then b else a
   }
