@@ -398,10 +398,9 @@ mod tests {
     }
 
     #[test]
-    fn upstream_small_multiples_decompress() {
-        // Upstream encodings of i*basepoint for i = 0..15.
-        // We currently only test decompression validity since point
-        // addition/compression APIs are not implemented yet.
+    fn encodings_of_small_multiples_of_basepoint() {
+        // Ported from curve25519-dalek `encodings_of_small_multiples_of_basepoint`.
+        // Table of encodings of i*basepoint for i = 0..15.
         let compressed = [
             CompressedRistretto([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -469,8 +468,11 @@ mod tests {
             ]),
         ];
 
+        let basepoint = RistrettoPoint::basepoint();
+        let mut bp = RistrettoPoint::identity();
         for point in compressed {
-            assert!(point.decompress().is_some());
+            assert_eq!(bp.compress(), point);
+            bp = &bp + &basepoint;
         }
     }
 
